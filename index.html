@@ -1,0 +1,1632 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Save The Date Arthur</title>
+<meta name="description" content="Arthur faz 10 anos em 29 de dezembro. Entre no grid e confirme sua presença.">
+<meta name="theme-color" content="#0A0B0D">
+<meta name="robots" content="noindex, nofollow">
+<meta name="googlebot" content="noindex, nofollow">
+<meta property="og:title" content="Save The Date Arthur">
+<meta property="og:description" content="Arthur faz 10 anos em 29 de dezembro. Entre no grid e confirme sua presença.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0B0D'/%3E%3Crect x='4' y='6' width='24' height='3' fill='%23FF2D2D'/%3E%3Crect x='4' y='14' width='16' height='3' fill='%23F4F6F7'/%3E%3Crect x='4' y='22' width='20' height='3' fill='%23F4F6F7'/%3E%3C/svg%3E">
+
+<style>
+/* ============================================================
+   SAVE THE DATE ARTHUR
+   Mundo: tela de cronometragem ao vivo (live timing screen).
+   Carbono quase preto, vermelho de cronometragem, numerais
+   tabulares. Contrato: .impeccable/surfaces/index-html.md
+   ============================================================ */
+
+:root{
+  /* ground */
+  --carbon:#0A0B0D;
+  --panel:#121417;
+  --panel-hi:#191C21;
+  --line:rgba(255,255,255,.085);
+  --line-hi:rgba(255,255,255,.17);
+
+  /* ink */
+  --signal:#F4F6F7;
+  --dim:#98A1A9;
+  --faint:#808A92;   /* 5.4:1 on carbon — used for labels and placeholders */
+
+  /* status */
+  --red:#FF2D2D;
+  --red-deep:#B3111B;
+  --amber:#FFB020;
+  --green:#2BD98F;
+
+  /* type */
+  --display:"Archivo","Archivo Narrow",system-ui,sans-serif;
+  --data:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+  /* rhythm */
+  --gut:clamp(1.15rem,4.2vw,2.75rem);
+  --rule:1px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  background:var(--carbon);
+  /* No overflow guard on the root or body: `hidden` on body makes it a scroll
+     container and breaks anchor navigation, and `clip` here kills smooth
+     scrolling in Chrome. The only nowrap content is the hero lettering, and
+     .hero clips that itself. */
+  /* browser surfaces are part of the design */
+  scrollbar-color:#26292E var(--carbon);
+  scrollbar-width:thin;
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--carbon)}
+::-webkit-scrollbar-thumb{background:#26292E;border:2px solid var(--carbon)}
+::-webkit-scrollbar-thumb:hover{background:var(--red-deep)}
+::selection{background:var(--red);color:#fff}
+
+body{
+  margin:0;
+  background:var(--carbon);
+  color:var(--signal);
+  font-family:var(--display);
+  font-variation-settings:"wdth" 100,"wght" 400;
+  font-size:clamp(.95rem,.9rem + .35vw,1.06rem);
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+img,canvas{display:block;max-width:100%}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+
+/* focus ring themed from the palette, never the UA default */
+:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+input:focus-visible{outline-offset:0}
+
+.sr{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+
+/* skip link — first tab stop */
+.skip{
+  position:fixed;top:.5rem;left:.5rem;z-index:200;
+  transform:translateY(-160%);
+  padding:.7rem 1.1rem;background:var(--red);color:#fff;
+  font-family:var(--data);font-size:.7rem;letter-spacing:.1em;
+  text-decoration:none;
+  transition:transform .18s ease;
+}
+.skip:focus{transform:none}
+
+/* ---------- shared atoms ---------- */
+
+.shell{
+  width:100%;
+  max-width:min(1080px,100% - var(--gut) * 2);
+  margin-inline:auto;
+}
+
+/* the label vocabulary of a timing screen: small, tracked, mono */
+.tag{
+  font-family:var(--data);
+  font-variation-settings:"wght" 500,"wdth" 87.5;
+  font-size:clamp(.58rem,.53rem + .2vw,.68rem);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+
+.num{
+  font-family:var(--data);
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+  letter-spacing:-.02em;
+}
+
+h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
+
+.h2{
+  font-variation-settings:"wght" 800,"wdth" 78;
+  font-size:clamp(2.1rem,1.3rem + 4.1vw,3.9rem);
+  line-height:.95;
+  letter-spacing:-.028em;
+  text-transform:uppercase;
+}
+
+/* a section rule that reads as a timing-screen header bar */
+.bar{
+  display:flex;align-items:baseline;gap:1rem;
+  padding-bottom:.7rem;
+  border-bottom:var(--rule) solid var(--line-hi);
+}
+.bar::after{
+  content:"";flex:1;height:var(--rule);
+  background:repeating-linear-gradient(90deg,var(--line-hi) 0 4px,transparent 4px 9px);
+  transform:translateY(-.28em);
+}
+
+/* ============================================================
+   1. HERO — scroll-scrub. Tall section + inner sticky viewport.
+   ============================================================ */
+
+.hero{
+  position:relative;
+  width:100%;
+  height:420vh;                     /* JS overrides with a measured value */
+  overflow:clip;
+}
+
+.hero-sticky{
+  position:sticky;top:0;
+  height:100svh;
+  width:100%;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(.2rem,1.2svh,.8rem);
+  /* keep the stack clear of the action pinned at the bottom */
+  padding-bottom:clamp(6.5rem,13svh,8.5rem);
+}
+
+/* horizon glow behind everything */
+.hero-ground{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(120% 62% at 50% 58%, rgba(179,17,27,.30) 0%, rgba(179,17,27,0) 62%),
+    radial-gradient(90% 55% at 50% 34%, rgba(255,255,255,.055) 0%, rgba(255,255,255,0) 60%),
+    linear-gradient(180deg,#08090B 0%,#0A0B0D 45%,#08090B 100%);
+}
+/* sits UNDER the lettering: over it, the falloff reads as gradient text */
+.hero-vignette{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,.66) 100%);
+}
+
+/* the two split titles */
+.hero-word{
+  position:relative;z-index:2;
+  margin:0;
+  font-family:var(--display);
+  font-variation-settings:"wght" 900,"wdth" 66;
+  /* bounded by height as well as width, so the stack never overflows */
+  font-size:clamp(2.9rem, min(15.5vw, 15.5svh), 9.5rem);
+  line-height:.82;
+  letter-spacing:-.045em;
+  text-transform:uppercase;
+  color:var(--signal);
+  white-space:nowrap;
+  will-change:transform,opacity;
+}
+.hero-word--date{
+  font-variation-settings:"wght" 800,"wdth" 70;
+  font-size:clamp(2.2rem, min(11.5vw, 11.5svh), 7rem);
+}
+.hero-word .sep{color:var(--red)}
+
+/* the scrubbed card */
+.hero-card{
+  position:relative;z-index:2;
+  width:min(93vw, calc(47svh * (16/9)));
+  height:min(47svh, calc(93vw / (16/9)));
+  overflow:hidden;
+  background:#050607;
+  border:var(--rule) solid rgba(255,255,255,.13);
+  box-shadow:0 26px 90px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.05);
+  will-change:transform;
+  transform-origin:50% 50%;
+}
+.hero-card canvas{width:100%;height:100%}
+.hero-card::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 120px rgba(0,0,0,.55);
+}
+
+/* HUD drawn over the card */
+.hud{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:clamp(.55rem,1.7vw,1.15rem);
+  font-family:var(--data);
+}
+.hud-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.hud-cell{
+  display:flex;flex-direction:column;gap:.28em;
+  font-size:clamp(.5rem,.42rem + .5vw,.72rem);
+  letter-spacing:.14em;
+  color:var(--dim);
+  text-transform:uppercase;
+}
+.hud-cell b{
+  font-variation-settings:"wght" 700;
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(.72rem,.55rem + 1vw,1.15rem);
+  letter-spacing:-.01em;
+  color:var(--signal);
+}
+.hud-cell--right{text-align:right;align-items:flex-end}
+.hud-live{color:var(--red)}
+.hud-live b{color:var(--red)}
+
+/* the P1 driver line, the world's signature component */
+.hud-driver{
+  display:flex;align-items:center;gap:.55rem;
+  padding:.34rem .6rem;
+  background:rgba(6,7,8,.72);
+  border-left:2px solid var(--red);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  font-size:clamp(.55rem,.45rem + .55vw,.8rem);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--signal);
+  align-self:flex-start;
+}
+.hud-driver .pos{font-variation-settings:"wght" 700;color:var(--red)}
+.hud-driver .car{
+  font-variation-settings:"wght" 700;
+  padding:.05rem .34rem;
+  background:var(--signal);
+  color:var(--carbon);
+}
+
+/* speed bar */
+.hud-speed{display:flex;gap:2px;align-items:flex-end;height:clamp(10px,2.2vw,18px)}
+.hud-speed i{
+  display:block;width:clamp(3px,.7vw,5px);height:100%;
+  background:rgba(255,255,255,.14);
+  transition:background .12s linear;
+}
+.hud-speed i.on{background:var(--signal)}
+.hud-speed i.on.hot{background:var(--red)}
+
+/* the persistent action, always in thumb reach */
+.hero-action{
+  position:absolute;z-index:6;
+  left:50%;bottom:max(1.15rem,env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.7rem;
+  width:min(92vw,26rem);
+}
+
+.cta{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;gap:.7rem;
+  width:100%;min-height:3.5rem;padding:.9rem 1.4rem;
+  background:var(--red);
+  color:#fff;
+  font-family:var(--data);
+  font-variation-settings:"wght" 700,"wdth" 87.5;
+  font-size:clamp(.66rem,.6rem + .25vw,.8rem);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  text-decoration:none;
+  border:0;
+  box-shadow:0 10px 24px rgba(0,0,0,.55);
+  transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s ease;
+  overflow:hidden;
+}
+.cta::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.28) 48%,transparent 62%);
+  transform:translateX(-110%);
+}
+.cta:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(0,0,0,.65)}
+.cta:hover::before{animation:wipe .7s ease}
+.cta:active{transform:translateY(0)}
+@keyframes wipe{to{transform:translateX(110%)}}
+
+.cta svg{width:1.15em;height:1.15em;flex:none}
+
+.hero-hint{
+  font-family:var(--data);
+  font-size:clamp(.52rem,.48rem + .18vw,.63rem);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--faint);
+  display:flex;align-items:center;gap:.5rem;
+}
+.hero-hint::before{content:"";width:1.5rem;height:var(--rule);background:var(--faint)}
+
+/* ============================================================
+   2. BRIEFING — telemetry rows
+   ============================================================ */
+
+.section{position:relative;padding-block:clamp(4.5rem,11vw,8.5rem)}
+.section--briefing{
+  background:linear-gradient(180deg,var(--carbon) 0%,#0D0F12 100%);
+  border-top:var(--rule) solid var(--line-hi);
+}
+
+.brief-grid{
+  display:grid;gap:clamp(2.2rem,5vw,4rem);
+  margin-top:clamp(1.8rem,4vw,3rem);
+}
+@media(min-width:860px){
+  .brief-grid{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:start}
+}
+
+.prose p{margin:0 0 1.05em;max-width:62ch;color:#D3D8DC}
+.prose p:last-child{margin-bottom:0}
+.prose strong{font-variation-settings:"wght" 700;color:var(--signal)}
+
+/* the readout table */
+.readout{border-top:var(--rule) solid var(--line-hi)}
+.readout dl{margin:0}
+.readout .row{
+  display:grid;
+  grid-template-columns:minmax(5.5rem,auto) 1fr;
+  gap:.75rem 1rem;
+  align-items:baseline;
+  padding:.82rem .2rem;
+  border-bottom:var(--rule) solid var(--line);
+  transition:background .2s ease;
+}
+.readout .row:hover{background:rgba(255,255,255,.02)}
+.readout dt{
+  font-family:var(--data);
+  font-variation-settings:"wght" 500,"wdth" 87.5;
+  font-size:clamp(.56rem,.52rem + .18vw,.66rem);
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--faint);
+}
+.readout dd{
+  margin:0;
+  font-family:var(--data);
+  font-variation-settings:"wght" 600;
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(.82rem,.75rem + .35vw,1.02rem);
+  letter-spacing:-.01em;
+  color:var(--signal);
+  text-transform:uppercase;
+}
+.readout dd.pending{color:var(--amber)}
+.readout dd.live{color:var(--red)}
+.readout dd .yr{color:var(--faint);font-variation-settings:"wght" 400}
+
+/* ============================================================
+   3. COUNTDOWN — lit digits over ghost cells
+   ============================================================ */
+
+.section--clock{
+  background:#0D0F12;
+  border-top:var(--rule) solid var(--line);
+}
+
+.clock{
+  display:grid;
+  /* 2x2 on a phone: four columns of big tabular digits cannot fit 390px,
+     and minmax(0,…) keeps the digits from forcing the grid wider than the page */
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(.35rem,1.4vw,1rem);
+  margin-top:clamp(1.6rem,3.5vw,2.6rem);
+}
+@media(min-width:560px){
+  .clock{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+.unit{
+  position:relative;
+  padding:clamp(.9rem,2.4vw,1.7rem) clamp(.3rem,1vw,.8rem) clamp(.7rem,1.8vw,1.2rem);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 60%),
+    var(--panel);
+  border:var(--rule) solid var(--line);
+  text-align:center;
+}
+.unit::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--red);opacity:.5;
+}
+.unit--now::before{opacity:1}
+
+.digits{
+  position:relative;
+  display:flex;justify-content:center;gap:.1em;
+  font-family:var(--data);
+  font-variation-settings:"wght" 700,"wdth" 100;
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(2.1rem,1rem + 6vw,5.4rem);
+  line-height:1;
+  letter-spacing:0;
+  color:var(--signal);
+}
+
+/* every digit sits in its own socket: the unlit cell is drawn as
+   deliberately as the lit one (seven-segment discipline) */
+.cell{
+  position:relative;
+  display:inline-grid;place-items:center;
+  padding:.12em .1em;
+  background:rgba(0,0,0,.34);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.cell .ghost{
+  position:absolute;inset:0;
+  display:grid;place-items:center;
+  color:var(--signal);
+  opacity:.065;
+  pointer-events:none;
+}
+.cell .lit{position:relative}
+.unit--now .cell .lit{color:var(--red)}
+
+.unit .tag{display:block;margin-top:.7rem}
+
+/* ============================================================
+   4. GRID ENTRY — the RSVP
+   ============================================================ */
+
+.section--grid{
+  background:linear-gradient(180deg,#0D0F12 0%,var(--carbon) 55%);
+  border-top:var(--rule) solid var(--line);
+}
+
+.entry{
+  margin-top:clamp(1.8rem,4vw,3rem);
+  display:grid;gap:clamp(1.8rem,4vw,3rem);
+}
+@media(min-width:940px){
+  .entry{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}
+}
+
+/* choice rows read like grid slots */
+.choices{display:grid;gap:.6rem;margin:0 0 1.6rem;padding:0;border:0;min-width:0}
+.choices legend{padding:0}
+
+.choice{
+  position:relative;
+  display:flex;align-items:center;gap:.9rem;
+  min-height:4rem;padding:1rem 1.1rem;
+  background:var(--panel);
+  border:var(--rule) solid var(--line-hi);
+  cursor:pointer;
+  transition:border-color .2s ease,background .2s ease,transform .18s cubic-bezier(.2,.8,.3,1);
+}
+.choice:hover{background:var(--panel-hi);transform:translateX(2px)}
+.choice input{
+  appearance:none;-webkit-appearance:none;
+  width:1.25rem;height:1.25rem;margin:0;flex:none;
+  border:2px solid var(--line-hi);
+  border-radius:50%;
+  background:transparent;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.choice input:checked{
+  border-color:var(--red);
+  box-shadow:inset 0 0 0 3px var(--carbon), inset 0 0 0 9px var(--red);
+}
+.choice-text{
+  font-family:var(--data);
+  font-variation-settings:"wght" 600,"wdth" 87.5;
+  font-size:clamp(.72rem,.66rem + .28vw,.86rem);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.choice-note{
+  display:block;margin-top:.34rem;
+  font-family:var(--display);
+  font-variation-settings:"wght" 400;
+  font-size:.84rem;letter-spacing:0;text-transform:none;
+  line-height:1.45;
+  color:var(--dim);
+}
+.choice:has(input:checked){border-color:var(--red);background:var(--panel-hi)}
+.choice:has(input:checked)::after{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);
+}
+.choice:has(input:focus-visible){outline:2px solid var(--red);outline-offset:3px}
+
+/* fields */
+.fields{display:grid;gap:1.15rem;min-width:0}
+.fields[hidden]{display:none}
+
+.pair{display:grid;gap:1.15rem;min-width:0}
+@media(min-width:560px){
+  .pair{grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1.58fr);align-items:end}
+}
+
+.field{display:grid;gap:.5rem;min-width:0}
+.field label{
+  font-family:var(--data);
+  font-variation-settings:"wght" 500,"wdth" 87.5;
+  font-size:clamp(.56rem,.52rem + .18vw,.66rem);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.field input{
+  width:100%;min-height:3.4rem;
+  padding:.8rem .95rem;
+  background:#08090B;
+  border:var(--rule) solid var(--line-hi);
+  border-radius:0;
+  color:var(--signal);
+  font-family:var(--data);
+  font-variation-settings:"wght" 500;
+  font-variant-numeric:tabular-nums;
+  font-size:.95rem;
+  caret-color:var(--red);
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.field input::placeholder{color:var(--faint)}
+.field input:focus{
+  border-color:var(--red);
+  background:#0B0D0F;
+  box-shadow:0 0 0 3px rgba(255,45,45,.16);
+  outline:none;
+}
+.field input[type=number]{appearance:textfield;-moz-appearance:textfield}
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* stepper for the counts — big targets, no tiny native spinners */
+.stepper{display:flex;align-items:stretch;border:var(--rule) solid var(--line-hi);background:#08090B}
+.stepper input{
+  flex:1 1 auto;
+  width:100%;min-width:2.2rem;
+  padding-inline:0;                 /* the field padding would eat the whole cell */
+  border:0;text-align:center;
+  background:transparent;box-shadow:none;
+  font-variation-settings:"wght" 700;
+  font-size:1.05rem;
+}
+.stepper input:focus{box-shadow:none;background:transparent}
+.stepper:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,45,45,.16)}
+.step{
+  flex:none;width:2.7rem;
+  display:grid;place-items:center;
+  color:var(--dim);
+  transition:background .16s ease,color .16s ease;
+}
+.step:hover{background:var(--panel-hi);color:var(--signal)}
+.step:active{background:var(--red);color:#fff}
+.step svg{width:.95rem;height:.95rem}
+
+/* errors read as a race-control message: a banded full-width row */
+.err{
+  min-height:1.5rem;margin:1.1rem 0 0;
+  font-family:var(--data);
+  font-size:.76rem;letter-spacing:.03em;line-height:1.5;
+  color:#FFC9CD;
+}
+.err:not(:empty){
+  display:flex;gap:.6rem;align-items:flex-start;
+  padding:.8rem .95rem;
+  background:rgba(179,17,27,.26);
+  box-shadow:inset 0 2px 0 var(--red);
+}
+.err:not(:empty)::before{
+  content:"!";
+  flex:none;
+  display:grid;place-items:center;
+  width:1.15rem;height:1.15rem;
+  background:var(--red);color:#fff;
+  font-variation-settings:"wght" 700;
+  font-size:.72rem;line-height:1;
+}
+
+/* the live grid preview — the signature interaction */
+.preview{
+  position:sticky;top:clamp(1rem,4vh,2.5rem);
+  background:var(--panel);
+  border:var(--rule) solid var(--line-hi);
+  min-width:0;
+}
+.preview-head{
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:.8rem 1rem;
+  border-bottom:var(--rule) solid var(--line-hi);
+  background:#08090B;
+}
+.preview-live{display:flex;align-items:center;gap:.45rem;color:var(--red)}
+.preview-live .dot{
+  width:.42rem;height:.42rem;background:var(--red);border-radius:50%;
+  animation:blip 1.6s steps(1) infinite;
+}
+@keyframes blip{0%,50%{opacity:1}50.01%,100%{opacity:.22}}
+
+.slots{margin:0;padding:0;list-style:none}
+.slot{
+  display:grid;
+  grid-template-columns:2.4rem 2.6rem minmax(0,1fr);
+  gap:.7rem;align-items:center;
+  padding:.72rem 1rem;
+  border-bottom:var(--rule) solid var(--line);
+  font-family:var(--data);
+  font-variant-numeric:tabular-nums;
+  font-size:.76rem;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  animation:slotIn .32s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes slotIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.slot:last-child{border-bottom:0}
+.slot .p{color:var(--faint);font-variation-settings:"wght" 600}
+.slot .no{
+  display:grid;place-items:center;
+  padding:.14rem 0;
+  background:var(--line);
+  color:var(--dim);
+  font-variation-settings:"wght" 700;
+  font-size:.7rem;
+}
+.slot .who{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.slot--lead .p{color:var(--red)}
+.slot--lead .no{background:var(--red);color:#fff}
+.slot--lead .who{color:var(--signal);font-variation-settings:"wght" 600}
+
+.slot--filled .no{background:var(--signal);color:var(--carbon)}
+.slot--filled .who{color:var(--signal)}
+
+.slot--empty .who{color:var(--faint)}
+.slot--empty .no{background:transparent;box-shadow:inset 0 0 0 1px var(--line-hi);color:var(--faint)}
+
+.slot--out .no{background:transparent;box-shadow:inset 0 0 0 1px var(--line-hi);color:var(--faint)}
+.slot--out .who{color:var(--amber)}
+
+.preview-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:.85rem 1rem;
+  border-top:var(--rule) solid var(--line-hi);
+  background:#08090B;
+}
+.preview-foot b{
+  font-family:var(--data);font-variant-numeric:tabular-nums;
+  font-variation-settings:"wght" 700;
+  font-size:1.05rem;
+  color:var(--signal);
+}
+
+/* ---------- footer ---------- */
+.foot{
+  padding:clamp(2.4rem,6vw,4rem) 0 clamp(2.6rem,7vw,4.5rem);
+  border-top:var(--rule) solid var(--line-hi);
+  background:var(--carbon);
+}
+.foot-in{display:grid;gap:.55rem;text-align:center;justify-items:center}
+.foot p{margin:0;color:var(--dim);font-size:.88rem;max-width:44ch}
+.foot .lead{color:var(--signal);font-variation-settings:"wght" 600}
+.foot .flag{
+  width:2.8rem;height:1.8rem;margin-bottom:.6rem;
+  background:
+    conic-gradient(var(--signal) 90deg,#16181B 90deg 180deg,var(--signal) 180deg 270deg,#16181B 270deg);
+  background-size:.7rem .6rem;
+  box-shadow:inset 0 0 0 1px var(--line-hi);
+}
+
+/* ---------- scroll reveal ----------
+   Scoped to .js so the invitation is readable with no JavaScript at all;
+   an unrevealed page is a blank page, and this one has to be read. */
+.js .rise{opacity:0;transform:translateY(22px)}
+.rise.in{
+  opacity:1;transform:none;
+  transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1);
+}
+
+/* ---------- reduced motion ---------- */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+  .rise{opacity:1;transform:none}
+  .hero{height:auto !important}
+  .hero-sticky{position:static;height:auto;min-height:100svh;padding:5rem 0 9rem}
+}
+</style>
+</head>
+
+<body>
+<script>document.documentElement.className += " js";</script>
+<a class="skip" href="#confirmar">Ir direto para a confirmação</a>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero" aria-labelledby="arthur">
+  <div class="hero-sticky">
+    <div class="hero-ground" aria-hidden="true"></div>
+
+    <h1 class="hero-word" id="arthur" data-split="up">Arthur</h1>
+
+    <div class="hero-card" id="card">
+      <canvas id="track" aria-hidden="true"></canvas>
+
+      <div class="hud" aria-hidden="true">
+        <div class="hud-row">
+          <div class="hud-cell hud-live">
+            <span>Ao vivo</span>
+            <b id="hud-clock">00:00:00</b>
+          </div>
+          <div class="hud-cell hud-cell--right">
+            <span>Velocidade</span>
+            <div class="hud-speed" id="hud-speed"></div>
+          </div>
+        </div>
+
+        <div class="hud-row">
+          <div class="hud-driver">
+            <span class="pos">P1</span>
+            <span class="car">10</span>
+            <span>Arthur</span>
+          </div>
+          <div class="hud-cell hud-cell--right">
+            <span>Volta</span>
+            <b id="hud-lap">1 / 10</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hero-word hero-word--date" data-split="down">Dez<span class="sep">&middot;</span>29</p>
+
+    <div class="hero-vignette" aria-hidden="true"></div>
+
+    <div class="hero-action">
+      <a class="cta" href="#confirmar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 21V4h13l-2.5 4L17 12H4"/>
+        </svg>
+        Confirmar presença
+      </a>
+      <span class="hero-hint">Role para o briefing</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BRIEFING ============ -->
+<section class="section section--briefing" aria-labelledby="briefing-h">
+  <div class="shell">
+    <div class="bar rise"><span class="tag">Briefing</span></div>
+    <div class="brief-grid">
+      <div class="prose rise">
+        <h2 class="h2" id="briefing-h" style="margin-bottom:1.15rem">O Arthur chega aos&nbsp;10.</h2>
+        <p>E ele quer você lá. A gente está montando o dia inteiro em volta disso &mdash; e você está na lista desde o começo.</p>
+        <p>Só tem um detalhe: <strong>29 de dezembro cai numa terça-feira</strong>, bem naquela semana estranha entre o Natal e o Ano&nbsp;Novo. Muita gente viaja, muita gente trabalha.</p>
+        <p>Por isso a confirmação vem antes do convite completo. Saber quem consegue vir muda o tamanho da festa, a comida, o espaço &mdash; tudo. <strong>Leva 15&nbsp;segundos.</strong></p>
+      </div>
+
+      <div class="readout rise">
+        <dl>
+          <div class="row"><dt>Evento</dt><dd>Aniversário de 10 anos</dd></div>
+          <div class="row"><dt>Piloto</dt><dd>Arthur</dd></div>
+          <div class="row"><dt>Número</dt><dd class="num">10</dd></div>
+          <div class="row"><dt>Data</dt><dd class="num">29 dez <span class="yr" id="party-year">2026</span></dd></div>
+          <div class="row"><dt>Dia</dt><dd>Terça-feira</dd></div>
+          <div class="row"><dt>Local</dt><dd class="pending">A definir</dd></div>
+          <div class="row"><dt>Horário</dt><dd class="pending">A definir</dd></div>
+          <div class="row"><dt>Status</dt><dd class="live">Confirmando grid</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COUNTDOWN ============ -->
+<section class="section section--clock" aria-labelledby="clock-h">
+  <div class="shell">
+    <div class="bar rise"><span class="tag">Para a largada</span></div>
+    <h2 class="h2 sr" id="clock-h">Contagem regressiva para 29 de dezembro</h2>
+
+    <div class="clock rise" id="clock">
+      <div class="unit" data-unit="d"><div class="digits" data-len="3"></div><span class="tag">Dias</span></div>
+      <div class="unit" data-unit="h"><div class="digits" data-len="2"></div><span class="tag">Horas</span></div>
+      <div class="unit" data-unit="m"><div class="digits" data-len="2"></div><span class="tag">Min</span></div>
+      <div class="unit unit--now" data-unit="s"><div class="digits" data-len="2"></div><span class="tag">Seg</span></div>
+    </div>
+    <p class="sr" id="clock-text" aria-live="polite"></p>
+  </div>
+</section>
+
+<!-- ============ GRID ENTRY ============ -->
+<section class="section section--grid" id="confirmar" aria-labelledby="grid-h">
+  <div class="shell">
+    <div class="bar rise"><span class="tag">Entrada no grid</span></div>
+
+    <div class="entry">
+      <form id="rsvp" novalidate class="rise">
+        <h2 class="h2" id="grid-h" style="margin-bottom:1.5rem">Você consegue<br>estar com a gente?</h2>
+
+        <fieldset class="choices">
+          <legend class="sr">Sua resposta</legend>
+
+          <label class="choice" for="yes">
+            <input type="radio" name="rsvp" id="yes" value="sim">
+            <span class="choice-text">
+              Vou estar lá
+              <span class="choice-note">Me conta quem vem com você.</span>
+            </span>
+          </label>
+
+          <label class="choice" for="no">
+            <input type="radio" name="rsvp" id="no" value="nao">
+            <span class="choice-text">
+              Não vou conseguir
+              <span class="choice-note">Sem problema &mdash; a gente entende a data.</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="fields" id="fields" hidden>
+          <div class="pair">
+            <div class="field">
+              <label for="adults">Adultos</label>
+              <div class="stepper">
+                <button type="button" class="step" data-step="-1" data-for="adults" aria-label="Menos um adulto">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+                </button>
+                <input id="adults" name="adults" type="number" min="0" max="30" step="1" inputmode="numeric" value="0">
+                <button type="button" class="step" data-step="1" data-for="adults" aria-label="Mais um adulto">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="adult-names">Nome dos adultos</label>
+              <input id="adult-names" name="adult-names" type="text" autocomplete="name" placeholder="Ex.: Marina e Paulo">
+            </div>
+          </div>
+
+          <div class="pair">
+            <div class="field">
+              <label for="kids">Crianças</label>
+              <div class="stepper">
+                <button type="button" class="step" data-step="-1" data-for="kids" aria-label="Menos uma criança">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+                </button>
+                <input id="kids" name="kids" type="number" min="0" max="30" step="1" inputmode="numeric" value="0">
+                <button type="button" class="step" data-step="1" data-for="kids" aria-label="Mais uma criança">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="kid-names">Nome das crianças</label>
+              <input id="kid-names" name="kid-names" type="text" placeholder="Ex.: Bento e Alice">
+            </div>
+          </div>
+        </div>
+
+        <p class="err" id="err" role="alert"></p>
+        <p class="sr" id="status" aria-live="polite"></p>
+
+        <button class="cta" type="submit" style="margin-top:.4rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-4-1L3 21l2.1-5a8.4 8.4 0 0 1-1-4 8.5 8.5 0 0 1 8.4-9h.5a8.5 8.5 0 0 1 8 8z"/>
+          </svg>
+          Enviar pelo WhatsApp
+        </button>
+      </form>
+
+      <!-- live grid preview -->
+      <aside class="preview rise" aria-label="Prévia do grid de largada">
+        <div class="preview-head">
+          <span class="tag">Grid de largada</span>
+          <span class="tag preview-live"><i class="dot"></i>Ao vivo</span>
+        </div>
+        <ul class="slots" id="slots"></ul>
+        <div class="preview-foot">
+          <span class="tag">No grid</span>
+          <b class="num" id="total">1</b>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="shell foot-in">
+    <div class="flag" aria-hidden="true"></div>
+    <p class="lead">Obrigado por responder.</p>
+    <p>Este site só monta a mensagem &mdash; você ainda toca em <em>enviar</em> dentro do WhatsApp.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+var REDUCED  = matchMedia("(prefers-reduced-motion: reduce)").matches;
+var WHATSAPP = "5521970657327";              /* +55 21 97065-7327 */
+var PARTY    = nextDec29();
+
+function nextDec29(){
+  var now = new Date(), y = now.getFullYear();
+  var d = new Date(y, 11, 29, 0, 0, 0, 0);
+  if (d.getTime() < now.getTime()) d = new Date(y + 1, 11, 29, 0, 0, 0, 0);
+  return d;
+}
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function pad(v, n){ return String(v).padStart(n, "0"); }
+
+document.getElementById("party-year").textContent = PARTY.getFullYear();
+
+/* ================================================================
+   TRACK CANVAS
+   A night circuit drawn in perspective. No frame sequence to
+   download: the scene is rendered, so the page still opens fast on
+   a phone over a weak connection.
+   ================================================================ */
+var cv = document.getElementById("track");
+var cx = cv.getContext("2d");
+var travel = 0, speed = 0, targetSpeed = 0;
+
+function sizeCanvas(){
+  var r   = cv.getBoundingClientRect();
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width  = Math.max(1, Math.round(r.width  * dpr));
+  cv.height = Math.max(1, Math.round(r.height * dpr));
+}
+
+function draw(){
+  var W = cv.width, H = cv.height;
+  if (!W || !H) return;
+  var S = W / 1280;                       /* scale from a 1280 design width */
+
+  var horizon = H * 0.42;
+  var focal   = 320 * S;
+  var camH    = 130 * S;
+  /* tuned so the kerbs stay inside the frame at the near edge:
+     halfWidth(ZNEAR) = roadHW * (H - horizon) / camH */
+  var roadHW  = 150 * S;
+
+  function py(z){ return horizon + (camH * focal) / z; }
+  function halfWidth(z){ return (roadHW * focal) / z; }
+
+  var ZNEAR = camH * focal / (H - horizon);
+  var ZFAR  = camH * focal / 2;
+
+  /* sky + horizon glow */
+  var sky = cx.createLinearGradient(0, 0, 0, horizon);
+  sky.addColorStop(0, "#050607");
+  sky.addColorStop(1, "#17100F");
+  cx.fillStyle = sky;
+  cx.fillRect(0, 0, W, horizon + 1);
+
+  var glow = cx.createRadialGradient(W / 2, horizon, 0, W / 2, horizon, W * 0.42);
+  glow.addColorStop(0,    "rgba(255,60,45,0.32)");
+  glow.addColorStop(0.45, "rgba(179,17,27,0.11)");
+  glow.addColorStop(1,    "rgba(179,17,27,0)");
+  cx.fillStyle = glow;
+  cx.fillRect(0, 0, W, horizon * 1.7);
+
+  /* ground beside the track — darker, so the asphalt edge reads */
+  var gnd = cx.createLinearGradient(0, horizon, 0, H);
+  gnd.addColorStop(0, "#0A0B0C");
+  gnd.addColorStop(1, "#030304");
+  cx.fillStyle = gnd;
+  cx.fillRect(0, horizon, W, H - horizon);
+
+  var span = ZFAR - ZNEAR;
+
+  /* run-off apron: a wider, dimmer band that gives the track a shoulder */
+  cx.beginPath();
+  cx.moveTo(W / 2 - halfWidth(ZNEAR) * 1.9, H);
+  cx.lineTo(W / 2 - halfWidth(ZFAR)  * 1.9, py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZFAR)  * 1.9, py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZNEAR) * 1.9, H);
+  cx.closePath();
+  cx.fillStyle = "#121316";
+  cx.fill();
+
+  /* asphalt */
+  cx.beginPath();
+  cx.moveTo(W / 2 - halfWidth(ZNEAR), H);
+  cx.lineTo(W / 2 - halfWidth(ZFAR),  py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZFAR),  py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZNEAR), H);
+  cx.closePath();
+  var road = cx.createLinearGradient(0, horizon, 0, H);
+  road.addColorStop(0, "#2E3238");
+  road.addColorStop(0.45, "#23262B");
+  road.addColorStop(1, "#171A1D");
+  cx.fillStyle = road;
+  cx.fill();
+
+  /* barrier walls beyond the apron — they frame the track and give it a floor */
+  var AW = 1.9;                                   /* apron edge, in track half-widths */
+  var wallH = 60 * S;                             /* world height */
+  for (var wsg = -1; wsg <= 1; wsg += 2){
+    var xN = W / 2 + wsg * halfWidth(ZNEAR) * AW;
+    var xF = W / 2 + wsg * halfWidth(ZFAR)  * AW;
+    var hN = wallH * focal / ZNEAR, hF = wallH * focal / ZFAR;
+    cx.beginPath();
+    cx.moveTo(xN, H);
+    cx.lineTo(xN, H - hN);
+    cx.lineTo(xF, py(ZFAR) - hF);
+    cx.lineTo(xF, py(ZFAR));
+    cx.closePath();
+    var wg = cx.createLinearGradient(0, horizon, 0, H);
+    wg.addColorStop(0, "#24272C");
+    wg.addColorStop(1, "#101215");
+    cx.fillStyle = wg;
+    cx.fill();
+  }
+
+  /* floodlight pylons — the night circuit's depth cue */
+  var POLE = 1400 * S, poff = travel % POLE;
+  for (var pi = 0; pi < 16; pi++){
+    var pz = ZNEAR * 2.2 + pi * POLE - poff;
+    if (pz <= ZNEAR * 1.5 || pz > ZFAR) continue;
+    var pyBase = py(pz);
+    var proj   = focal / pz;
+    var mastPx = 430 * S * proj;
+    var pa     = clamp(1 - (pz - ZNEAR) / span, 0, 1) * 0.9;
+    for (var psg = -1; psg <= 1; psg += 2){
+      var px = W / 2 + psg * halfWidth(pz) * 3.1;
+      if (px < -60 || px > W + 60) continue;
+      var topY = pyBase - mastPx;
+      cx.strokeStyle = "rgba(126,134,142," + (0.5 * pa) + ")";
+      cx.lineWidth = Math.max(1, 26 * S * proj);
+      cx.beginPath(); cx.moveTo(px, pyBase); cx.lineTo(px, topY); cx.stroke();
+
+      var headR = Math.max(1.5, 62 * S * proj);
+      var lg = cx.createRadialGradient(px, topY, 0, px, topY, headR * 4.5);
+      lg.addColorStop(0,   "rgba(255,246,214," + (0.85 * pa) + ")");
+      lg.addColorStop(0.3, "rgba(255,232,180," + (0.22 * pa) + ")");
+      lg.addColorStop(1,   "rgba(255,232,180,0)");
+      cx.fillStyle = lg;
+      cx.beginPath(); cx.arc(px, topY, headR * 4.5, 0, Math.PI * 2); cx.fill();
+    }
+  }
+
+  /* transverse seams: the speed cue */
+  var SEAM = 260 * S, soff = travel % SEAM;
+  for (var i = 0; i < 60; i++){
+    var z = ZNEAR + i * SEAM - soff;
+    if (z <= ZNEAR || z > ZFAR) continue;
+    var a = clamp(1 - (z - ZNEAR) / span, 0, 1);
+    cx.strokeStyle = "rgba(255,255,255," + (0.05 * a) + ")";
+    cx.lineWidth = Math.max(1, 2 * S * a);
+    cx.beginPath();
+    cx.moveTo(W / 2 - halfWidth(z), py(z));
+    cx.lineTo(W / 2 + halfWidth(z), py(z));
+    cx.stroke();
+  }
+
+  /* edge kerbs, red and white — the most legible racing signal there is */
+  var KERB = 150 * S, koff = travel % (KERB * 2);
+  for (var k = 0; k < 90; k++){
+    var z0 = ZNEAR + k * KERB - koff, z1 = z0 + KERB;
+    if (z1 <= ZNEAR || z0 > ZFAR) continue;
+    z0 = Math.max(z0, ZNEAR); z1 = Math.min(z1, ZFAR);
+    var y0 = py(z0), y1 = py(z1);
+    var w0 = halfWidth(z0), w1 = halfWidth(z1);
+    var aa = clamp(1 - (z0 - ZNEAR) / span, 0, 1);
+    cx.fillStyle = (k % 2 === 0)
+      ? "rgba(200,26,36," + (0.9 * aa) + ")"
+      : "rgba(226,230,233," + (0.82 * aa) + ")";
+    for (var sg = -1; sg <= 1; sg += 2){
+      cx.beginPath();
+      cx.moveTo(W / 2 + sg * w0, y0);
+      cx.lineTo(W / 2 + sg * (w0 + w0 * 0.1), y0);
+      cx.lineTo(W / 2 + sg * (w1 + w1 * 0.1), y1);
+      cx.lineTo(W / 2 + sg * w1, y1);
+      cx.closePath();
+      cx.fill();
+    }
+  }
+
+  /* centre dashes */
+  var DASH = 200 * S, doff = travel % (DASH * 2);
+  for (var j = 0; j < 70; j++){
+    var b0 = ZNEAR + j * DASH * 2 - doff, b1 = b0 + DASH;
+    if (b1 <= ZNEAR || b0 > ZFAR) continue;
+    b0 = Math.max(b0, ZNEAR); b1 = Math.min(b1, ZFAR);
+    var Y0 = py(b0), Y1 = py(b1);
+    var D0 = halfWidth(b0) * 0.016, D1 = halfWidth(b1) * 0.016;
+    var al = clamp(1 - (b0 - ZNEAR) / span, 0, 1);
+    cx.fillStyle = "rgba(244,246,247," + (0.66 * al) + ")";
+    cx.beginPath();
+    cx.moveTo(W / 2 - D0, Y0); cx.lineTo(W / 2 + D0, Y0);
+    cx.lineTo(W / 2 + D1, Y1); cx.lineTo(W / 2 - D1, Y1);
+    cx.closePath();
+    cx.fill();
+  }
+
+  /* ------------------------------------------------------------------
+     THE CAR — rear view, seen from a chase camera. Drawn in the same
+     perspective as the track, so it sits on the road instead of on top
+     of it. World units below match roadHW/camH; P() projects them.
+     ------------------------------------------------------------------ */
+  var zCar  = ZNEAR * 1.34;
+  var uCar  = focal / zCar;
+  var P     = function(v){ return v * S * uCar; };
+  var baseY = py(zCar);
+  /* it drifts a little as speed rises, and settles when slow */
+  var sway  = Math.sin(travel / 1450) * halfWidth(zCar) * 0.13 * clamp(speed / 5, 0, 1);
+  var cxr   = W / 2 + sway;
+
+  var tyreOut = P(46), tyreIn = P(31), tyreH = P(27);
+  var bodyHW  = P(17), bodyH  = P(31);
+  var wingHW  = P(41), wingY  = P(35), wingH = P(7.5);
+  var difHW   = P(27), difH   = P(10);
+
+  /* contact shadow */
+  var csh = cx.createRadialGradient(cxr, baseY, 0, cxr, baseY, tyreOut * 1.5);
+  csh.addColorStop(0, "rgba(0,0,0,.75)");
+  csh.addColorStop(1, "rgba(0,0,0,0)");
+  cx.fillStyle = csh;
+  cx.beginPath();
+  cx.ellipse(cxr, baseY, tyreOut * 1.5, tyreH * 0.34, 0, 0, Math.PI * 2);
+  cx.fill();
+
+  /* rear tyres */
+  for (var tsg = -1; tsg <= 1; tsg += 2){
+    var xo = cxr + tsg * tyreOut, xi = cxr + tsg * tyreIn;
+    var tx = Math.min(xo, xi);
+    var tg = cx.createLinearGradient(tx, baseY - tyreH, tx, baseY);
+    tg.addColorStop(0, "#3A3E43");
+    tg.addColorStop(0.35, "#191C1F");
+    tg.addColorStop(1, "#0A0B0C");
+    cx.fillStyle = tg;
+    cx.fillRect(tx, baseY - tyreH, Math.abs(xo - xi), tyreH);
+    /* sidewall highlight so the tyre reads as round, not as a slab */
+    cx.fillStyle = "rgba(255,255,255,.09)";
+    cx.fillRect(tx, baseY - tyreH, Math.abs(xo - xi), Math.max(1, tyreH * 0.1));
+  }
+
+  /* diffuser, with fins */
+  cx.fillStyle = "#0D0E10";
+  cx.beginPath();
+  cx.moveTo(cxr - difHW, baseY);
+  cx.lineTo(cxr - difHW * 0.86, baseY - difH);
+  cx.lineTo(cxr + difHW * 0.86, baseY - difH);
+  cx.lineTo(cxr + difHW, baseY);
+  cx.closePath();
+  cx.fill();
+  cx.strokeStyle = "rgba(255,255,255,.14)";
+  cx.lineWidth = Math.max(1, P(1.1));
+  for (var fi = -2; fi <= 2; fi++){
+    var fx = cxr + fi * difHW * 0.36;
+    cx.beginPath(); cx.moveTo(fx, baseY); cx.lineTo(fx, baseY - difH); cx.stroke();
+  }
+
+  /* engine cover / body — tapers up from the floor */
+  cx.beginPath();
+  cx.moveTo(cxr - bodyHW,       baseY - difH * 0.6);
+  cx.lineTo(cxr - bodyHW * 0.5, baseY - bodyH);
+  cx.lineTo(cxr + bodyHW * 0.5, baseY - bodyH);
+  cx.lineTo(cxr + bodyHW,       baseY - difH * 0.6);
+  cx.closePath();
+  var bg = cx.createLinearGradient(cxr - bodyHW, 0, cxr + bodyHW, 0);
+  bg.addColorStop(0,    "#7E0E17");
+  bg.addColorStop(0.34, "#E12232");
+  bg.addColorStop(0.62, "#C21A28");
+  bg.addColorStop(1,    "#6C0A12");
+  cx.fillStyle = bg;
+  cx.fill();
+
+  /* rain light, centred on the engine cover */
+  var lightR = Math.max(1, P(3.4));
+  var lgl = cx.createRadialGradient(cxr, baseY - bodyH * 0.62, 0, cxr, baseY - bodyH * 0.62, lightR * 3.4);
+  lgl.addColorStop(0,   "rgba(255,72,72,.95)");
+  lgl.addColorStop(0.35,"rgba(255,40,40,.42)");
+  lgl.addColorStop(1,   "rgba(255,40,40,0)");
+  cx.fillStyle = lgl;
+  cx.beginPath(); cx.arc(cxr, baseY - bodyH * 0.62, lightR * 3.4, 0, Math.PI * 2); cx.fill();
+
+  /* rear wing: endplates, then the plane across them */
+  cx.fillStyle = "#15171A";
+  for (var esg = -1; esg <= 1; esg += 2){
+    cx.fillRect(cxr + esg * wingHW - (esg > 0 ? P(4) : 0), baseY - wingY - P(13), P(4), P(15));
+  }
+  var wgr = cx.createLinearGradient(0, baseY - wingY - wingH, 0, baseY - wingY);
+  wgr.addColorStop(0, "#2B2F34");
+  wgr.addColorStop(1, "#101215");
+  cx.fillStyle = wgr;
+  cx.fillRect(cxr - wingHW, baseY - wingY - wingH, wingHW * 2, wingH);
+  /* the car's number, on the wing, when there is room to read it */
+  if (wingH > 7){
+    cx.fillStyle = "rgba(244,246,247,.92)";
+    cx.font = "700 " + (wingH * 0.9).toFixed(1) + "px 'Martian Mono', monospace";
+    cx.textAlign = "center";
+    cx.textBaseline = "middle";
+    cx.fillText("10", cxr, baseY - wingY - wingH * 0.46);
+  }
+
+  /* speed streaks: motion made visible at the edges */
+  var st = clamp(speed / 6.5, 0, 1);
+  if (st > 0.02){
+    cx.save();
+    cx.globalCompositeOperation = "lighter";
+    for (var q = 0; q < 22; q++){
+      var seed = ((q * 97.13 + Math.floor(travel / 220)) % 1000) / 1000;
+      var side = (q % 2) ? 1 : -1;
+      var zz = ZNEAR + seed * span * 0.55;
+      var yy = py(zz);
+      var xx = W / 2 + side * halfWidth(zz) * (1.15 + seed * 0.8);
+      var len = 90 * S * st * (0.5 + seed);
+      var g2 = cx.createLinearGradient(xx, yy, xx + side * len, yy);
+      g2.addColorStop(0, "rgba(255,120,90," + (0.28 * st) + ")");
+      g2.addColorStop(1, "rgba(255,120,90,0)");
+      cx.strokeStyle = g2;
+      cx.lineWidth = Math.max(1, 2.4 * S);
+      cx.beginPath(); cx.moveTo(xx, yy); cx.lineTo(xx + side * len, yy); cx.stroke();
+    }
+    cx.restore();
+  }
+
+  /* vignette */
+  var vg = cx.createRadialGradient(W / 2, H * 0.55, H * 0.15, W / 2, H * 0.55, H * 0.95);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, "rgba(0,0,0,0.6)");
+  cx.fillStyle = vg;
+  cx.fillRect(0, 0, W, H);
+}
+
+/* ---------------- hero scroll choreography ---------------- */
+var hero    = document.getElementById("hero");
+var card    = document.getElementById("card");
+var wordUp  = document.querySelector('[data-split="up"]');
+var wordDn  = document.querySelector('[data-split="down"]');
+var speedEl = document.getElementById("hud-speed");
+var lapEl   = document.getElementById("hud-lap");
+var hudClk  = document.getElementById("hud-clock");
+
+for (var bi = 0; bi < 12; bi++) speedEl.appendChild(document.createElement("i"));
+var bars = speedEl.children;
+
+var progress = 0, shown = 0, baseW = 0, baseH = 0;
+
+function measureCard(){
+  var prev = card.style.transform;
+  card.style.transform = "none";
+  var r = card.getBoundingClientRect();
+  baseW = r.width; baseH = r.height;
+  card.style.transform = prev;
+}
+
+function heroProgress(){
+  var total = hero.offsetHeight - window.innerHeight;
+  if (total <= 0) return 0;
+  return clamp(-hero.getBoundingClientRect().top / total, 0, 1);
+}
+
+function immerseScale(){
+  if (baseW <= 0 || baseH <= 0) return 1.6;
+  return Math.max(window.innerWidth / baseW, window.innerHeight / baseH) * 1.04;
+}
+
+function startScale(){ return window.innerWidth < 768 ? 0.92 : 0.78; }
+
+function applyHero(p){
+  /* three acts: settle (0-.15) - immerse (.15-.78) - release (.78-1) */
+  var s0 = startScale(), sc, tx, op;
+
+  if (p < 0.15){
+    var t = p / 0.15;
+    sc = lerp(s0, 1, 1 - Math.pow(1 - t, 3));
+    tx = t; op = 1;
+  } else if (p < 0.78){
+    var t2 = (p - 0.15) / 0.63;
+    sc = lerp(1, immerseScale(), Math.pow(t2, 1.7));
+    tx = 1; op = clamp(1 - t2 / 0.32, 0, 1);
+  } else {
+    var t3 = (p - 0.78) / 0.22;
+    var e  = t3 < 0.5 ? 4 * t3 * t3 * t3 : 1 - Math.pow(-2 * t3 + 2, 3) / 2;
+    sc = lerp(immerseScale(), s0, e);
+    tx = 1 - e; op = e;
+  }
+
+  card.style.transform = "scale(" + sc.toFixed(4) + ")";
+
+  var push = window.innerWidth < 768 ? 76 : 62;
+  wordUp.style.transform = "translateX(" + (-push * tx).toFixed(2) + "vw)";
+  wordDn.style.transform = "translateX(" + ( push * tx).toFixed(2) + "vw)";
+  wordUp.style.opacity = wordDn.style.opacity = op.toFixed(3);
+
+  targetSpeed = 0.9 + clamp((p - 0.05) / 0.7, 0, 1) * 6.2;
+  lapEl.textContent = (1 + Math.min(9, Math.floor(p * 10))) + " / 10";
+
+  var lit = Math.round(clamp(targetSpeed / 7.1, 0, 1) * bars.length);
+  for (var i = 0; i < bars.length; i++){
+    bars[i].className = i < lit ? (i >= bars.length - 3 ? "on hot" : "on") : "";
+  }
+}
+
+function applyHeroStatic(){
+  card.style.transform = "none";
+  wordUp.style.transform = wordDn.style.transform = "none";
+  wordUp.style.opacity = wordDn.style.opacity = "1";
+  targetSpeed = speed = 3.2;
+  for (var i = 0; i < bars.length; i++) bars[i].className = i < 6 ? "on" : "";
+  lapEl.textContent = "1 / 10";
+}
+
+/* ---------------- countdown ---------------- */
+var units = {};
+Array.prototype.forEach.call(document.querySelectorAll("#clock .unit"), function(u){
+  var box = u.querySelector(".digits");
+  var len = +box.dataset.len, cells = [];
+  for (var i = 0; i < len; i++){
+    var c = document.createElement("span"); c.className = "cell";
+    var g = document.createElement("span"); g.className = "ghost"; g.textContent = "8";
+    var l = document.createElement("span"); l.className = "lit";   l.textContent = "0";
+    c.appendChild(g); c.appendChild(l); box.appendChild(c);
+    cells.push(l);
+  }
+  units[u.dataset.unit] = cells;
+});
+
+function paint(key, value){
+  var cells = units[key];
+  var s = pad(Math.max(0, value), cells.length);
+  for (var i = 0; i < cells.length; i++){
+    if (cells[i].textContent !== s[i]) cells[i].textContent = s[i];
+  }
+}
+
+var clockText = document.getElementById("clock-text");
+var lastDay   = -1;
+
+function tickClock(){
+  var ms = Math.max(0, PARTY.getTime() - Date.now());
+  var s   = Math.floor(ms / 1000);
+  var d   = Math.floor(s / 86400);
+  var h   = Math.floor((s % 86400) / 3600);
+  var m   = Math.floor((s % 3600) / 60);
+  var sec = s % 60;
+
+  paint("d", d); paint("h", h); paint("m", m); paint("s", sec);
+  hudClk.textContent = pad(h, 2) + ":" + pad(m, 2) + ":" + pad(sec, 2);
+
+  if (d !== lastDay){
+    lastDay = d;
+    clockText.textContent = "Faltam " + d + " dias para 29 de dezembro.";
+  }
+}
+
+/* ---------------- render loop ---------------- */
+function frame(){
+  shown += (progress - shown) * 0.16;      /* scrub smoothing */
+  applyHero(shown);
+  speed  += (targetSpeed - speed) * 0.05;
+  travel += speed * 34;
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function onScroll(){ progress = heroProgress(); }
+
+function onResize(){
+  if (!REDUCED) hero.style.height = (window.innerHeight * 4.2) + "px";
+  measureCard();
+  sizeCanvas();
+  if (REDUCED){ applyHeroStatic(); draw(); } else { onScroll(); }
+}
+
+/* ---------------- in-page jumps ----------------
+   The scroll is animated here rather than with `behavior:"smooth"`: that is
+   a no-op wherever the browser has scroll animations switched off, which
+   would leave the page's primary action doing nothing at all. */
+function glideTo(targetY, done){
+  targetY = Math.max(0, Math.min(targetY,
+    document.documentElement.scrollHeight - window.innerHeight));
+
+  if (REDUCED){
+    window.scrollTo({ top: targetY, behavior: "instant" });
+    if (done) done();
+    return;
+  }
+
+  var startY = window.scrollY, dist = targetY - startY;
+  if (Math.abs(dist) < 2){ if (done) done(); return; }
+
+  var dur = clamp(Math.abs(dist) * 0.38, 450, 1150);
+  var t0  = performance.now();
+  var settled = false;
+
+  function land(){
+    if (settled) return;
+    settled = true;
+    if (done) done();
+  }
+
+  /* If rAF never runs — a hidden or throttled tab, a browser that pauses
+     animations — the visitor still lands on the form. */
+  var guard = window.setTimeout(function(){
+    if (settled) return;
+    window.scrollTo({ top: targetY, behavior: "instant" });
+    land();
+  }, dur + 400);
+
+  (function step(now){
+    var t = clamp((now - t0) / dur, 0, 1);
+    var e = 1 - Math.pow(1 - t, 3);                 /* ease-out cubic */
+    window.scrollTo({ top: startY + dist * e, behavior: "instant" });
+    if (t < 1){ requestAnimationFrame(step); return; }
+    window.clearTimeout(guard);
+    land();
+  })(t0);
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('a[href^="#"]'), function(a){
+  a.addEventListener("click", function(e){
+    var target = document.getElementById(a.getAttribute("href").slice(1));
+    if (!target) return;
+    e.preventDefault();
+    glideTo(target.getBoundingClientRect().top + window.scrollY, function(){
+      /* arriving at the form should put the keyboard on the first choice */
+      var first = target.querySelector("input, button, [href], [tabindex]");
+      if (first) first.focus({ preventScroll: true });
+    });
+  });
+});
+
+/* ---------------- RSVP ---------------- */
+var form    = document.getElementById("rsvp");
+var yes     = document.getElementById("yes");
+var no      = document.getElementById("no");
+var fields  = document.getElementById("fields");
+var adults  = document.getElementById("adults");
+var kids    = document.getElementById("kids");
+var aNames  = document.getElementById("adult-names");
+var kNames  = document.getElementById("kid-names");
+var err     = document.getElementById("err");
+var status  = document.getElementById("status");
+var slots   = document.getElementById("slots");
+var totalEl = document.getElementById("total");
+
+function n(el){ var v = parseInt(el.value, 10); return isNaN(v) ? 0 : clamp(v, 0, 30); }
+function clearErr(){ err.textContent = ""; }
+function esc(s){ return s.replace(/[&<>"]/g, function(c){
+  return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+}); }
+function names(str){
+  return str.split(/[,;\n]|\se\s/i).map(function(s){ return s.trim(); }).filter(Boolean);
+}
+
+function toggleFields(){
+  fields.hidden = !yes.checked;
+  clearErr();
+  renderSlots();
+}
+
+/* the signature interaction: the grid fills as you type */
+function renderSlots(){
+  var rows = ['<li class="slot slot--lead"><span class="p">P1</span><span class="no">10</span><span class="who">Arthur</span></li>'];
+  var count = 1;
+
+  if (yes.checked){
+    var list  = names(aNames.value).concat(names(kNames.value));
+    var seats = n(adults) + n(kids);
+    var shownSeats = Math.max(seats, list.length);
+    count = 1 + seats;
+
+    if (shownSeats === 0){
+      rows.push('<li class="slot slot--empty"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">aguardando você</span></li>');
+    }
+    for (var i = 0; i < Math.min(shownSeats, 12); i++){
+      var pos = "P" + (i + 2);
+      if (list[i]){
+        rows.push('<li class="slot slot--filled"><span class="p">' + pos +
+                  '</span><span class="no">' + (i + 11) + '</span><span class="who">' +
+                  esc(list[i]) + '</span></li>');
+      } else {
+        rows.push('<li class="slot slot--empty"><span class="p">' + pos +
+                  '</span><span class="no">&mdash;</span><span class="who">vaga aberta</span></li>');
+      }
+    }
+    if (shownSeats > 12){
+      rows.push('<li class="slot slot--empty"><span class="p">&hellip;</span><span class="no">&mdash;</span><span class="who">mais ' +
+                (shownSeats - 12) + ' no grid</span></li>');
+    }
+  } else if (no.checked){
+    rows.push('<li class="slot slot--out"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">não poderá vir</span></li>');
+  } else {
+    rows.push('<li class="slot slot--empty"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">aguardando você</span></li>');
+  }
+
+  slots.innerHTML = rows.join("");
+  totalEl.textContent = count;
+}
+
+Array.prototype.forEach.call(document.querySelectorAll(".step"), function(btn){
+  btn.addEventListener("click", function(){
+    var el = document.getElementById(btn.dataset.for);
+    el.value = clamp(n(el) + (+btn.dataset.step), 0, 30);
+    clearErr(); renderSlots();
+  });
+});
+
+[yes, no].forEach(function(r){ r.addEventListener("change", toggleFields); });
+[adults, kids, aNames, kNames].forEach(function(el){
+  el.addEventListener("input", function(){ clearErr(); renderSlots(); });
+});
+
+function fail(msg, el){
+  err.textContent = msg;
+  if (el) el.focus();
+  return false;
+}
+
+form.addEventListener("submit", function(e){
+  e.preventDefault();
+  clearErr();
+
+  if (!yes.checked && !no.checked){
+    return fail("Escolha uma das duas opções acima para continuar.", yes);
+  }
+
+  var msg;
+
+  if (no.checked){
+    msg = "Oi! Respondendo o Save the Date do Arthur.\n\n" +
+          "Infelizmente não vamos conseguir ir no dia 29/12. " +
+          "Manda um abraço pro aniversariante!";
+  } else {
+    var a = n(adults), k = n(kids);
+    if (a + k === 0)                  return fail("Informe pelo menos uma pessoa — adulto ou criança.", adults);
+    if (a > 0 && !aNames.value.trim()) return fail("Falta o nome dos adultos que vão.", aNames);
+    if (k > 0 && !kNames.value.trim()) return fail("Falta o nome das crianças que vão.", kNames);
+
+    msg = "Oi! Respondendo o Save the Date do Arthur.\n\n" +
+          "Vamos estar lá no dia 29/12.\n\n" +
+          "Adultos: " + a + (a ? "\n" + aNames.value.trim() : "") + "\n\n" +
+          "Crianças: " + k + (k ? "\n" + kNames.value.trim() : "") + "\n\n" +
+          "Total: " + (a + k) + " pessoa" + (a + k > 1 ? "s" : "") + ".";
+  }
+
+  status.textContent = "Abrindo o WhatsApp com sua mensagem pronta.";
+  window.open("https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg),
+              "_blank", "noopener,noreferrer");
+});
+
+/* ---------------- reveal ---------------- */
+if ("IntersectionObserver" in window && !REDUCED){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+  Array.prototype.forEach.call(document.querySelectorAll(".rise"), function(el, i){
+    el.style.transitionDelay = ((i % 4) * 70) + "ms";
+    io.observe(el);
+  });
+  /* last resort: never leave the page blank because the observer stayed quiet */
+  window.setTimeout(function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".rise:not(.in)"), function(el){
+      el.classList.add("in");
+    });
+  }, 2500);
+} else {
+  Array.prototype.forEach.call(document.querySelectorAll(".rise"), function(el){
+    el.classList.add("in");
+  });
+}
+
+/* ---------------- boot ---------------- */
+renderSlots();
+tickClock();
+setInterval(tickClock, 1000);
+
+onResize();
+window.addEventListener("resize", onResize, { passive: true });
+window.addEventListener("orientationchange", onResize);
+
+if (REDUCED){
+  hero.style.height = "auto";
+} else {
+  window.addEventListener("scroll", onScroll, { passive: true });
+  progress = shown = heroProgress();
+  requestAnimationFrame(frame);
+}
+})();
+</script>
+</body>
+</html>
