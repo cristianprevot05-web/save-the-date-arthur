@@ -162,7 +162,10 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
 .hero{
   position:relative;
   width:100%;
-  height:420vh;                     /* JS overrides with a measured value */
+  /* svh, not vh or a JS-measured innerHeight: on a phone the address bar
+     collapses during the very gesture that drives the scrub, and a height
+     that moves with it makes the card jump mid-animation */
+  height:420svh;
   overflow:clip;
 }
 
@@ -392,7 +395,6 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
   color:var(--signal);
   text-transform:uppercase;
 }
-.readout dd.pending{color:var(--amber)}
 .readout dd.live{color:var(--red)}
 .readout dd .yr{color:var(--faint);font-variation-settings:"wght" 400}
 
@@ -523,10 +525,8 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
   line-height:1.45;
   color:var(--dim);
 }
+/* state is the colour of the whole row — no side stripe on top of it */
 .choice:has(input:checked){border-color:var(--red);background:var(--panel-hi)}
-.choice:has(input:checked)::after{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);
-}
 .choice:has(input:focus-visible){outline:2px solid var(--red);outline-offset:3px}
 
 /* fields */
@@ -790,7 +790,6 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
 <!-- ============ BRIEFING ============ -->
 <section class="section section--briefing" aria-labelledby="briefing-h">
   <div class="shell">
-    <div class="bar rise"><span class="tag">Briefing</span></div>
     <div class="brief-grid">
       <div class="prose rise">
         <h2 class="h2" id="briefing-h" style="margin-bottom:1.15rem">O Arthur chega aos&nbsp;10.</h2>
@@ -806,8 +805,6 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
           <div class="row"><dt>Número</dt><dd class="num">10</dd></div>
           <div class="row"><dt>Data</dt><dd class="num">29 dez <span class="yr" id="party-year">2026</span></dd></div>
           <div class="row"><dt>Dia</dt><dd>Terça-feira</dd></div>
-          <div class="row"><dt>Local</dt><dd class="pending">A definir</dd></div>
-          <div class="row"><dt>Horário</dt><dd class="pending">A definir</dd></div>
           <div class="row"><dt>Status</dt><dd class="live">Confirmando grid</dd></div>
         </dl>
       </div>
@@ -834,8 +831,6 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
 <!-- ============ GRID ENTRY ============ -->
 <section class="section section--grid" id="confirmar" aria-labelledby="grid-h">
   <div class="shell">
-    <div class="bar rise"><span class="tag">Entrada no grid</span></div>
-
     <div class="entry">
       <form id="rsvp" novalidate class="rise">
         <h2 class="h2" id="grid-h" style="margin-bottom:1.5rem">Você consegue<br>estar com a gente?</h2>
@@ -1271,6 +1266,7 @@ function draw(){
 
 /* ---------------- hero scroll choreography ---------------- */
 var hero    = document.getElementById("hero");
+var sticky  = hero.querySelector(".hero-sticky");
 var card    = document.getElementById("card");
 var wordUp  = document.querySelector('[data-split="up"]');
 var wordDn  = document.querySelector('[data-split="down"]');
@@ -1292,7 +1288,9 @@ function measureCard(){
 }
 
 function heroProgress(){
-  var total = hero.offsetHeight - window.innerHeight;
+  /* measured against the sticky pane, which is sized in svh like .hero —
+     using innerHeight here would re-scale the scrub as the address bar moves */
+  var total = hero.offsetHeight - sticky.offsetHeight;
   if (total <= 0) return 0;
   return clamp(-hero.getBoundingClientRect().top / total, 0, 1);
 }
@@ -1391,20 +1389,48 @@ function tickClock(){
   }
 }
 
-/* ---------------- render loop ---------------- */
-function frame(){
+/* ---------------- render loop ----------------
+   The canvas only runs while the hero is actually on screen. Once the
+   visitor reaches the form the loop stops: redrawing a circuit nobody can
+   see would spend a phone's battery for nothing. */
+var heroOnScreen = true, loopGen = 0;
+
+/* Each loop carries the generation it was started with. A callback the
+   browser deferred while the tab was hidden comes back with a stale id and
+   retires itself, so restarting can never leave two loops running at once
+   (which would double the travel speed) and can never fail to restart. */
+function frame(id){
+  if (id !== loopGen) return;
+  if (!heroOnScreen || document.hidden) return;
   shown += (progress - shown) * 0.16;      /* scrub smoothing */
   applyHero(shown);
   speed  += (targetSpeed - speed) * 0.05;
   travel += speed * 34;
   draw();
-  requestAnimationFrame(frame);
+  requestAnimationFrame(function(){ frame(id); });
 }
+
+function startLoop(){
+  if (REDUCED || !heroOnScreen || document.hidden) return;
+  var id = ++loopGen;
+  requestAnimationFrame(function(){ frame(id); });
+}
+
+function watchHero(){
+  if (!("IntersectionObserver" in window)) return;
+  new IntersectionObserver(function(entries){
+    heroOnScreen = entries[0].isIntersecting;
+    if (heroOnScreen) startLoop();
+  }, { threshold: 0 }).observe(hero);
+}
+
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden) startLoop();
+});
 
 function onScroll(){ progress = heroProgress(); }
 
 function onResize(){
-  if (!REDUCED) hero.style.height = (window.innerHeight * 4.2) + "px";
   measureCard();
   sizeCanvas();
   if (REDUCED){ applyHeroStatic(); draw(); } else { onScroll(); }
@@ -1619,12 +1645,11 @@ onResize();
 window.addEventListener("resize", onResize, { passive: true });
 window.addEventListener("orientationchange", onResize);
 
-if (REDUCED){
-  hero.style.height = "auto";
-} else {
+if (!REDUCED){
   window.addEventListener("scroll", onScroll, { passive: true });
   progress = shown = heroProgress();
-  requestAnimationFrame(frame);
+  watchHero();
+  startLoop();
 }
 })();
 </script>
