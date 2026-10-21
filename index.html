@@ -413,13 +413,6 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
   background:rgba(0,0,0,.34);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
 }
-.cell .ghost{
-  position:absolute;inset:0;
-  display:grid;place-items:center;
-  color:var(--signal);
-  opacity:.065;
-  pointer-events:none;
-}
 .cell .lit{position:relative}
 .unit--now .cell .lit{color:var(--red)}
 
@@ -1293,9 +1286,8 @@ Array.prototype.forEach.call(document.querySelectorAll("#clock .unit"), function
   var len = +box.dataset.len, cells = [];
   for (var i = 0; i < len; i++){
     var c = document.createElement("span"); c.className = "cell";
-    var g = document.createElement("span"); g.className = "ghost"; g.textContent = "8";
     var l = document.createElement("span"); l.className = "lit";   l.textContent = "0";
-    c.appendChild(g); c.appendChild(l); box.appendChild(c);
+    c.appendChild(l); box.appendChild(c);
     cells.push(l);
   }
   units[u.dataset.unit] = cells;
