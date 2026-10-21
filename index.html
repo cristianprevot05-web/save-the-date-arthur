@@ -875,7 +875,7 @@ h1,h2,h3{margin:0;font-family:var(--display);text-wrap:balance}
 "use strict";
 
 var REDUCED  = matchMedia("(prefers-reduced-motion: reduce)").matches;
-var WHATSAPP = "5521965793081";
+var WHATSAPP = "5521965793081";              /* +55 21 96579-3081 */
 var PARTY    = nextDec29();
 
 function nextDec29(){
@@ -890,6 +890,12 @@ function pad(v, n){ return String(v).padStart(n, "0"); }
 
 document.getElementById("party-year").textContent = PARTY.getFullYear();
 
+/* ================================================================
+   TRACK CANVAS
+   A night circuit drawn in perspective. No frame sequence to
+   download: the scene is rendered, so the page still opens fast on
+   a phone over a weak connection.
+   ================================================================ */
 var cv = document.getElementById("track");
 var cx = cv.getContext("2d");
 var travel = 0, speed = 0, targetSpeed = 0;
@@ -904,11 +910,13 @@ function sizeCanvas(){
 function draw(){
   var W = cv.width, H = cv.height;
   if (!W || !H) return;
-  var S = W / 1280;
+  var S = W / 1280;                       /* scale from a 1280 design width */
 
   var horizon = H * 0.42;
   var focal   = 320 * S;
   var camH    = 130 * S;
+  /* tuned so the kerbs stay inside the frame at the near edge:
+     halfWidth(ZNEAR) = roadHW * (H - horizon) / camH */
   var roadHW  = 150 * S;
 
   function py(z){ return horizon + (camH * focal) / z; }
@@ -917,6 +925,7 @@ function draw(){
   var ZNEAR = camH * focal / (H - horizon);
   var ZFAR  = camH * focal / 2;
 
+  /* sky + horizon glow */
   var sky = cx.createLinearGradient(0, 0, 0, horizon);
   sky.addColorStop(0, "#050607");
   sky.addColorStop(1, "#17100F");
@@ -924,183 +933,663 @@ function draw(){
   cx.fillRect(0, 0, W, horizon + 1);
 
   var glow = cx.createRadialGradient(W / 2, horizon, 0, W / 2, horizon, W * 0.42);
-  glow.addColorStop(0, "rgba(255,45,45,.34)");
-  glow.addColorStop(1, "rgba(255,45,45,0)");
+  glow.addColorStop(0,    "rgba(255,60,45,0.32)");
+  glow.addColorStop(0.45, "rgba(179,17,27,0.11)");
+  glow.addColorStop(1,    "rgba(179,17,27,0)");
   cx.fillStyle = glow;
-  cx.fillRect(0, 0, W, H);
+  cx.fillRect(0, 0, W, horizon * 1.7);
 
-  for (var z = ZNEAR; z < ZFAR; z *= 1.08) {
-    var y = py(z), w = halfWidth(z);
-    if (y > H) continue;
-    cx.strokeStyle = "rgba(255,255,255,.10)";
+  /* ground beside the track — darker, so the asphalt edge reads */
+  var gnd = cx.createLinearGradient(0, horizon, 0, H);
+  gnd.addColorStop(0, "#0A0B0C");
+  gnd.addColorStop(1, "#030304");
+  cx.fillStyle = gnd;
+  cx.fillRect(0, horizon, W, H - horizon);
+
+  var span = ZFAR - ZNEAR;
+
+  /* run-off apron: a wider, dimmer band that gives the track a shoulder */
+  cx.beginPath();
+  cx.moveTo(W / 2 - halfWidth(ZNEAR) * 1.9, H);
+  cx.lineTo(W / 2 - halfWidth(ZFAR)  * 1.9, py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZFAR)  * 1.9, py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZNEAR) * 1.9, H);
+  cx.closePath();
+  cx.fillStyle = "#121316";
+  cx.fill();
+
+  /* asphalt */
+  cx.beginPath();
+  cx.moveTo(W / 2 - halfWidth(ZNEAR), H);
+  cx.lineTo(W / 2 - halfWidth(ZFAR),  py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZFAR),  py(ZFAR));
+  cx.lineTo(W / 2 + halfWidth(ZNEAR), H);
+  cx.closePath();
+  var road = cx.createLinearGradient(0, horizon, 0, H);
+  road.addColorStop(0, "#2E3238");
+  road.addColorStop(0.45, "#23262B");
+  road.addColorStop(1, "#171A1D");
+  cx.fillStyle = road;
+  cx.fill();
+
+  /* barrier walls beyond the apron — they frame the track and give it a floor */
+  var AW = 1.9;                                   /* apron edge, in track half-widths */
+  var wallH = 60 * S;                             /* world height */
+  for (var wsg = -1; wsg <= 1; wsg += 2){
+    var xN = W / 2 + wsg * halfWidth(ZNEAR) * AW;
+    var xF = W / 2 + wsg * halfWidth(ZFAR)  * AW;
+    var hN = wallH * focal / ZNEAR, hF = wallH * focal / ZFAR;
     cx.beginPath();
-    cx.moveTo(W / 2 - w, y);
-    cx.lineTo(W / 2 + w, y);
+    cx.moveTo(xN, H);
+    cx.lineTo(xN, H - hN);
+    cx.lineTo(xF, py(ZFAR) - hF);
+    cx.lineTo(xF, py(ZFAR));
+    cx.closePath();
+    var wg = cx.createLinearGradient(0, horizon, 0, H);
+    wg.addColorStop(0, "#24272C");
+    wg.addColorStop(1, "#101215");
+    cx.fillStyle = wg;
+    cx.fill();
+  }
+
+  /* floodlight pylons — the night circuit's depth cue */
+  var POLE = 1400 * S, poff = travel % POLE;
+  for (var pi = 0; pi < 16; pi++){
+    var pz = ZNEAR * 2.2 + pi * POLE - poff;
+    if (pz <= ZNEAR * 1.5 || pz > ZFAR) continue;
+    var pyBase = py(pz);
+    var proj   = focal / pz;
+    var mastPx = 430 * S * proj;
+    var pa     = clamp(1 - (pz - ZNEAR) / span, 0, 1) * 0.9;
+    for (var psg = -1; psg <= 1; psg += 2){
+      var px = W / 2 + psg * halfWidth(pz) * 3.1;
+      if (px < -60 || px > W + 60) continue;
+      var topY = pyBase - mastPx;
+      cx.strokeStyle = "rgba(126,134,142," + (0.5 * pa) + ")";
+      cx.lineWidth = Math.max(1, 26 * S * proj);
+      cx.beginPath(); cx.moveTo(px, pyBase); cx.lineTo(px, topY); cx.stroke();
+
+      var headR = Math.max(1.5, 62 * S * proj);
+      var lg = cx.createRadialGradient(px, topY, 0, px, topY, headR * 4.5);
+      lg.addColorStop(0,   "rgba(255,246,214," + (0.85 * pa) + ")");
+      lg.addColorStop(0.3, "rgba(255,232,180," + (0.22 * pa) + ")");
+      lg.addColorStop(1,   "rgba(255,232,180,0)");
+      cx.fillStyle = lg;
+      cx.beginPath(); cx.arc(px, topY, headR * 4.5, 0, Math.PI * 2); cx.fill();
+    }
+  }
+
+  /* transverse seams: the speed cue */
+  var SEAM = 260 * S, soff = travel % SEAM;
+  for (var i = 0; i < 60; i++){
+    var z = ZNEAR + i * SEAM - soff;
+    if (z <= ZNEAR || z > ZFAR) continue;
+    var a = clamp(1 - (z - ZNEAR) / span, 0, 1);
+    cx.strokeStyle = "rgba(255,255,255," + (0.05 * a) + ")";
+    cx.lineWidth = Math.max(1, 2 * S * a);
+    cx.beginPath();
+    cx.moveTo(W / 2 - halfWidth(z), py(z));
+    cx.lineTo(W / 2 + halfWidth(z), py(z));
     cx.stroke();
   }
 
-  cx.strokeStyle = "rgba(255,255,255,.12)";
-  cx.lineWidth = 2 * S;
+  /* edge kerbs, red and white — the most legible racing signal there is */
+  var KERB = 150 * S, koff = travel % (KERB * 2);
+  for (var k = 0; k < 90; k++){
+    var z0 = ZNEAR + k * KERB - koff, z1 = z0 + KERB;
+    if (z1 <= ZNEAR || z0 > ZFAR) continue;
+    z0 = Math.max(z0, ZNEAR); z1 = Math.min(z1, ZFAR);
+    var y0 = py(z0), y1 = py(z1);
+    var w0 = halfWidth(z0), w1 = halfWidth(z1);
+    var aa = clamp(1 - (z0 - ZNEAR) / span, 0, 1);
+    cx.fillStyle = (k % 2 === 0)
+      ? "rgba(200,26,36," + (0.9 * aa) + ")"
+      : "rgba(226,230,233," + (0.82 * aa) + ")";
+    for (var sg = -1; sg <= 1; sg += 2){
+      cx.beginPath();
+      cx.moveTo(W / 2 + sg * w0, y0);
+      cx.lineTo(W / 2 + sg * (w0 + w0 * 0.1), y0);
+      cx.lineTo(W / 2 + sg * (w1 + w1 * 0.1), y1);
+      cx.lineTo(W / 2 + sg * w1, y1);
+      cx.closePath();
+      cx.fill();
+    }
+  }
+
+  /* centre dashes */
+  var DASH = 200 * S, doff = travel % (DASH * 2);
+  for (var j = 0; j < 70; j++){
+    var b0 = ZNEAR + j * DASH * 2 - doff, b1 = b0 + DASH;
+    if (b1 <= ZNEAR || b0 > ZFAR) continue;
+    b0 = Math.max(b0, ZNEAR); b1 = Math.min(b1, ZFAR);
+    var Y0 = py(b0), Y1 = py(b1);
+    var D0 = halfWidth(b0) * 0.016, D1 = halfWidth(b1) * 0.016;
+    var al = clamp(1 - (b0 - ZNEAR) / span, 0, 1);
+    cx.fillStyle = "rgba(244,246,247," + (0.66 * al) + ")";
+    cx.beginPath();
+    cx.moveTo(W / 2 - D0, Y0); cx.lineTo(W / 2 + D0, Y0);
+    cx.lineTo(W / 2 + D1, Y1); cx.lineTo(W / 2 - D1, Y1);
+    cx.closePath();
+    cx.fill();
+  }
+
+  /* ------------------------------------------------------------------
+     THE CAR — rear view, seen from a chase camera. Drawn in the same
+     perspective as the track, so it sits on the road instead of on top
+     of it. World units below match roadHW/camH; P() projects them.
+     ------------------------------------------------------------------ */
+  var zCar  = ZNEAR * 1.34;
+  var uCar  = focal / zCar;
+  var P     = function(v){ return v * S * uCar; };
+  var baseY = py(zCar);
+  /* it drifts a little as speed rises, and settles when slow */
+  var sway  = Math.sin(travel / 1450) * halfWidth(zCar) * 0.13 * clamp(speed / 5, 0, 1);
+  var cxr   = W / 2 + sway;
+
+  var tyreOut = P(46), tyreIn = P(31), tyreH = P(27);
+  var bodyHW  = P(17), bodyH  = P(31);
+  var wingHW  = P(41), wingY  = P(35), wingH = P(7.5);
+  var difHW   = P(27), difH   = P(10);
+
+  /* contact shadow */
+  var csh = cx.createRadialGradient(cxr, baseY, 0, cxr, baseY, tyreOut * 1.5);
+  csh.addColorStop(0, "rgba(0,0,0,.75)");
+  csh.addColorStop(1, "rgba(0,0,0,0)");
+  cx.fillStyle = csh;
   cx.beginPath();
-  cx.moveTo(W * 0.28, horizon);
-  cx.lineTo(W * 0.72, horizon);
-  cx.stroke();
+  cx.ellipse(cxr, baseY, tyreOut * 1.5, tyreH * 0.34, 0, 0, Math.PI * 2);
+  cx.fill();
 
-  cx.fillStyle = "rgba(255,45,45,.18)";
-  cx.fillRect(0, H * 0.7, W, H * 0.3);
-
-  for (var i = 0; i < 18; i++) {
-    var t = i / 18;
-    var x = W / 2 + (t - .5) * W * 1.15;
-    var y = H * (.55 + t * .4);
-    cx.fillStyle = i % 2 ? "rgba(255,255,255,.08)" : "rgba(255,45,45,.12)";
-    cx.fillRect(x, y, 6 * S, 18 * S);
+  /* rear tyres */
+  for (var tsg = -1; tsg <= 1; tsg += 2){
+    var xo = cxr + tsg * tyreOut, xi = cxr + tsg * tyreIn;
+    var tx = Math.min(xo, xi);
+    var tg = cx.createLinearGradient(tx, baseY - tyreH, tx, baseY);
+    tg.addColorStop(0, "#3A3E43");
+    tg.addColorStop(0.35, "#191C1F");
+    tg.addColorStop(1, "#0A0B0C");
+    cx.fillStyle = tg;
+    cx.fillRect(tx, baseY - tyreH, Math.abs(xo - xi), tyreH);
+    /* sidewall highlight so the tyre reads as round, not as a slab */
+    cx.fillStyle = "rgba(255,255,255,.09)";
+    cx.fillRect(tx, baseY - tyreH, Math.abs(xo - xi), Math.max(1, tyreH * 0.1));
   }
 
-  travel += speed * 0.016;
-  speed = lerp(speed, targetSpeed, 0.06);
-  targetSpeed = clamp(targetSpeed + (Math.random() - .5) * .7, .3, 2.6);
-
-  cx.fillStyle = "rgba(255,255,255,.05)";
-  for (var j = 0; j < 8; j++) {
-    var shift = (travel * 2 + j * 90) % 400;
-    cx.fillRect(0, H * .56 + j * 18, W, 1);
-    cx.fillRect(shift, H * .56 + j * 18, 42, 1);
+  /* diffuser, with fins */
+  cx.fillStyle = "#0D0E10";
+  cx.beginPath();
+  cx.moveTo(cxr - difHW, baseY);
+  cx.lineTo(cxr - difHW * 0.86, baseY - difH);
+  cx.lineTo(cxr + difHW * 0.86, baseY - difH);
+  cx.lineTo(cxr + difHW, baseY);
+  cx.closePath();
+  cx.fill();
+  cx.strokeStyle = "rgba(255,255,255,.14)";
+  cx.lineWidth = Math.max(1, P(1.1));
+  for (var fi = -2; fi <= 2; fi++){
+    var fx = cxr + fi * difHW * 0.36;
+    cx.beginPath(); cx.moveTo(fx, baseY); cx.lineTo(fx, baseY - difH); cx.stroke();
   }
+
+  /* engine cover / body — tapers up from the floor */
+  cx.beginPath();
+  cx.moveTo(cxr - bodyHW,       baseY - difH * 0.6);
+  cx.lineTo(cxr - bodyHW * 0.5, baseY - bodyH);
+  cx.lineTo(cxr + bodyHW * 0.5, baseY - bodyH);
+  cx.lineTo(cxr + bodyHW,       baseY - difH * 0.6);
+  cx.closePath();
+  var bg = cx.createLinearGradient(cxr - bodyHW, 0, cxr + bodyHW, 0);
+  bg.addColorStop(0,    "#7E0E17");
+  bg.addColorStop(0.34, "#E12232");
+  bg.addColorStop(0.62, "#C21A28");
+  bg.addColorStop(1,    "#6C0A12");
+  cx.fillStyle = bg;
+  cx.fill();
+
+  /* rain light, centred on the engine cover */
+  var lightR = Math.max(1, P(3.4));
+  var lgl = cx.createRadialGradient(cxr, baseY - bodyH * 0.62, 0, cxr, baseY - bodyH * 0.62, lightR * 3.4);
+  lgl.addColorStop(0,   "rgba(255,72,72,.95)");
+  lgl.addColorStop(0.35,"rgba(255,40,40,.42)");
+  lgl.addColorStop(1,   "rgba(255,40,40,0)");
+  cx.fillStyle = lgl;
+  cx.beginPath(); cx.arc(cxr, baseY - bodyH * 0.62, lightR * 3.4, 0, Math.PI * 2); cx.fill();
+
+  /* rear wing: endplates, then the plane across them */
+  cx.fillStyle = "#15171A";
+  for (var esg = -1; esg <= 1; esg += 2){
+    cx.fillRect(cxr + esg * wingHW - (esg > 0 ? P(4) : 0), baseY - wingY - P(13), P(4), P(15));
+  }
+  var wgr = cx.createLinearGradient(0, baseY - wingY - wingH, 0, baseY - wingY);
+  wgr.addColorStop(0, "#2B2F34");
+  wgr.addColorStop(1, "#101215");
+  cx.fillStyle = wgr;
+  cx.fillRect(cxr - wingHW, baseY - wingY - wingH, wingHW * 2, wingH);
+  /* the car's number, on the wing, when there is room to read it */
+  if (wingH > 7){
+    cx.fillStyle = "rgba(244,246,247,.92)";
+    cx.font = "700 " + (wingH * 0.9).toFixed(1) + "px 'Martian Mono', monospace";
+    cx.textAlign = "center";
+    cx.textBaseline = "middle";
+    cx.fillText("10", cxr, baseY - wingY - wingH * 0.46);
+  }
+
+  /* speed streaks: motion made visible at the edges */
+  var st = clamp(speed / 6.5, 0, 1);
+  if (st > 0.02){
+    cx.save();
+    cx.globalCompositeOperation = "lighter";
+    for (var q = 0; q < 22; q++){
+      var seed = ((q * 97.13 + Math.floor(travel / 220)) % 1000) / 1000;
+      var side = (q % 2) ? 1 : -1;
+      var zz = ZNEAR + seed * span * 0.55;
+      var yy = py(zz);
+      var xx = W / 2 + side * halfWidth(zz) * (1.15 + seed * 0.8);
+      var len = 90 * S * st * (0.5 + seed);
+      var g2 = cx.createLinearGradient(xx, yy, xx + side * len, yy);
+      g2.addColorStop(0, "rgba(255,120,90," + (0.28 * st) + ")");
+      g2.addColorStop(1, "rgba(255,120,90,0)");
+      cx.strokeStyle = g2;
+      cx.lineWidth = Math.max(1, 2.4 * S);
+      cx.beginPath(); cx.moveTo(xx, yy); cx.lineTo(xx + side * len, yy); cx.stroke();
+    }
+    cx.restore();
+  }
+
+  /* vignette */
+  var vg = cx.createRadialGradient(W / 2, H * 0.55, H * 0.15, W / 2, H * 0.55, H * 0.95);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, "rgba(0,0,0,0.6)");
+  cx.fillStyle = vg;
+  cx.fillRect(0, 0, W, H);
 }
 
-function animate(){
-  draw();
-  requestAnimationFrame(animate);
+/* ---------------- hero scroll choreography ---------------- */
+var hero    = document.getElementById("hero");
+var sticky  = hero.querySelector(".hero-sticky");
+var card    = document.getElementById("card");
+var wordUp  = document.querySelector('[data-split="up"]');
+var wordDn  = document.querySelector('[data-split="down"]');
+var speedEl = document.getElementById("hud-speed");
+var lapEl   = document.getElementById("hud-lap");
+var hudClk  = document.getElementById("hud-clock");
+
+for (var bi = 0; bi < 12; bi++) speedEl.appendChild(document.createElement("i"));
+var bars = speedEl.children;
+
+var progress = 0, shown = 0, baseW = 0, baseH = 0;
+
+function measureCard(){
+  var prev = card.style.transform;
+  card.style.transform = "none";
+  var r = card.getBoundingClientRect();
+  baseW = r.width; baseH = r.height;
+  card.style.transform = prev;
 }
 
-window.addEventListener("resize", sizeCanvas);
-sizeCanvas();
-animate();
-
-var riseEls = document.querySelectorAll(".rise");
-if (riseEls.length) {
-  requestAnimationFrame(function(){
-    riseEls.forEach(function(el, idx){
-      setTimeout(function(){
-        el.classList.add("in");
-      }, idx * 90);
-    });
-  });
+function heroProgress(){
+  /* measured against the sticky pane, which is sized in svh like .hero —
+     using innerHeight here would re-scale the scrub as the address bar moves */
+  var total = hero.offsetHeight - sticky.offsetHeight;
+  if (total <= 0) return 0;
+  return clamp(-hero.getBoundingClientRect().top / total, 0, 1);
 }
 
-var slots = document.getElementById("slots");
-var total = document.getElementById("total");
-var preview = [
-  { name: "Arthur", status: "lead" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" },
-  { name: "", status: "empty" }
-];
-
-function renderSlots(){
-  slots.innerHTML = "";
-  preview.forEach(function(item, index){
-    var li = document.createElement("li");
-    li.className = "slot slot--" + item.status;
-    if (item.status === "lead") li.classList.add("slot--filled");
-    li.innerHTML = '<span class="p">P' + (index + 1) + '</span><span class="no">' + (item.name ? index + 1 : "") + '</span><span class="who">' + (item.name || "Disponível") + '</span>';
-    slots.appendChild(li);
-  });
-  total.textContent = String(preview.filter(function(item){ return item.name; }).length + 1);
+function immerseScale(){
+  if (baseW <= 0 || baseH <= 0) return 1.6;
+  return Math.max(window.innerWidth / baseW, window.innerHeight / baseH) * 1.04;
 }
 
-renderSlots();
+function startScale(){ return window.innerWidth < 768 ? 0.92 : 0.78; }
 
-var form = document.getElementById("rsvp");
-var fields = document.getElementById("fields");
-var err = document.getElementById("err");
-var status = document.getElementById("status");
-var radios = document.querySelectorAll('input[name="rsvp"]');
+function applyHero(p){
+  /* three acts: settle (0-.15) - immerse (.15-.78) - release (.78-1) */
+  var s0 = startScale(), sc, tx, op;
 
-function toggleFields(){
-  var chosen = document.querySelector('input[name="rsvp"]:checked');
-  if (chosen && chosen.value === "sim") {
-    fields.hidden = false;
+  if (p < 0.15){
+    var t = p / 0.15;
+    sc = lerp(s0, 1, 1 - Math.pow(1 - t, 3));
+    tx = t; op = 1;
+  } else if (p < 0.78){
+    var t2 = (p - 0.15) / 0.63;
+    sc = lerp(1, immerseScale(), Math.pow(t2, 1.7));
+    tx = 1; op = clamp(1 - t2 / 0.32, 0, 1);
   } else {
-    fields.hidden = true;
+    var t3 = (p - 0.78) / 0.22;
+    var e  = t3 < 0.5 ? 4 * t3 * t3 * t3 : 1 - Math.pow(-2 * t3 + 2, 3) / 2;
+    sc = lerp(immerseScale(), s0, e);
+    tx = 1 - e; op = e;
+  }
+
+  card.style.transform = "scale(" + sc.toFixed(4) + ")";
+
+  var push = window.innerWidth < 768 ? 76 : 62;
+  wordUp.style.transform = "translateX(" + (-push * tx).toFixed(2) + "vw)";
+  wordDn.style.transform = "translateX(" + ( push * tx).toFixed(2) + "vw)";
+  wordUp.style.opacity = wordDn.style.opacity = op.toFixed(3);
+
+  targetSpeed = 0.9 + clamp((p - 0.05) / 0.7, 0, 1) * 6.2;
+  lapEl.textContent = (1 + Math.min(9, Math.floor(p * 10))) + " / 10";
+
+  var lit = Math.round(clamp(targetSpeed / 7.1, 0, 1) * bars.length);
+  for (var i = 0; i < bars.length; i++){
+    bars[i].className = i < lit ? (i >= bars.length - 3 ? "on hot" : "on") : "";
   }
 }
 
-radios.forEach(function(radio){
-  radio.addEventListener("change", function(){
-    toggleFields();
-    err.textContent = "";
-    status.textContent = radio.value === "sim" ? "Resposta: presente" : "Resposta: ausente";
-  });
-});
-
-function clampField(target, min, max){
-  var value = Number(target.value || 0);
-  if (!Number.isFinite(value)) value = 0;
-  value = Math.min(Math.max(value, min), max);
-  target.value = String(value);
+function applyHeroStatic(){
+  card.style.transform = "none";
+  wordUp.style.transform = wordDn.style.transform = "none";
+  wordUp.style.opacity = wordDn.style.opacity = "1";
+  targetSpeed = speed = 3.2;
+  for (var i = 0; i < bars.length; i++) bars[i].className = i < 6 ? "on" : "";
+  lapEl.textContent = "1 / 10";
 }
 
-document.querySelectorAll(".step").forEach(function(btn){
-  btn.addEventListener("click", function(){
-    var target = document.getElementById(btn.dataset.for);
-    var next = (Number(target.value) || 0) + Number(btn.dataset.step);
-    target.value = Math.min(Math.max(next, 0), 30);
-    clampField(target, 0, 30);
-  });
+/* ---------------- countdown ---------------- */
+var units = {};
+Array.prototype.forEach.call(document.querySelectorAll("#clock .unit"), function(u){
+  var box = u.querySelector(".digits");
+  var len = +box.dataset.len, cells = [];
+  for (var i = 0; i < len; i++){
+    var c = document.createElement("span"); c.className = "cell";
+    var g = document.createElement("span"); g.className = "ghost"; g.textContent = "8";
+    var l = document.createElement("span"); l.className = "lit";   l.textContent = "0";
+    c.appendChild(g); c.appendChild(l); box.appendChild(c);
+    cells.push(l);
+  }
+  units[u.dataset.unit] = cells;
 });
 
-form.addEventListener("submit", function(event){
-  event.preventDefault();
+function paint(key, value){
+  var cells = units[key];
+  var s = pad(Math.max(0, value), cells.length);
+  for (var i = 0; i < cells.length; i++){
+    if (cells[i].textContent !== s[i]) cells[i].textContent = s[i];
+  }
+}
 
-  var chosen = document.querySelector('input[name="rsvp"]:checked');
-  if (!chosen) {
-    err.textContent = "Escolha se você vai ou não conseguir comparecer.";
+var clockText = document.getElementById("clock-text");
+var lastDay   = -1;
+
+function tickClock(){
+  var ms = Math.max(0, PARTY.getTime() - Date.now());
+  var s   = Math.floor(ms / 1000);
+  var d   = Math.floor(s / 86400);
+  var h   = Math.floor((s % 86400) / 3600);
+  var m   = Math.floor((s % 3600) / 60);
+  var sec = s % 60;
+
+  paint("d", d); paint("h", h); paint("m", m); paint("s", sec);
+  hudClk.textContent = pad(h, 2) + ":" + pad(m, 2) + ":" + pad(sec, 2);
+
+  if (d !== lastDay){
+    lastDay = d;
+    clockText.textContent = "Faltam " + d + " dias para 29 de dezembro.";
+  }
+}
+
+/* ---------------- render loop ----------------
+   The canvas only runs while the hero is actually on screen. Once the
+   visitor reaches the form the loop stops: redrawing a circuit nobody can
+   see would spend a phone's battery for nothing. */
+var heroOnScreen = true, loopGen = 0;
+
+/* Each loop carries the generation it was started with. A callback the
+   browser deferred while the tab was hidden comes back with a stale id and
+   retires itself, so restarting can never leave two loops running at once
+   (which would double the travel speed) and can never fail to restart. */
+function frame(id){
+  if (id !== loopGen) return;
+  if (!heroOnScreen || document.hidden) return;
+  shown += (progress - shown) * 0.16;      /* scrub smoothing */
+  applyHero(shown);
+  speed  += (targetSpeed - speed) * 0.05;
+  travel += speed * 34;
+  draw();
+  requestAnimationFrame(function(){ frame(id); });
+}
+
+function startLoop(){
+  if (REDUCED || !heroOnScreen || document.hidden) return;
+  var id = ++loopGen;
+  requestAnimationFrame(function(){ frame(id); });
+}
+
+function watchHero(){
+  if (!("IntersectionObserver" in window)) return;
+  new IntersectionObserver(function(entries){
+    heroOnScreen = entries[0].isIntersecting;
+    if (heroOnScreen) startLoop();
+  }, { threshold: 0 }).observe(hero);
+}
+
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden) startLoop();
+});
+
+function onScroll(){ progress = heroProgress(); }
+
+function onResize(){
+  measureCard();
+  sizeCanvas();
+  if (REDUCED){ applyHeroStatic(); draw(); } else { onScroll(); }
+}
+
+/* ---------------- in-page jumps ----------------
+   The scroll is animated here rather than with `behavior:"smooth"`: that is
+   a no-op wherever the browser has scroll animations switched off, which
+   would leave the page's primary action doing nothing at all. */
+function glideTo(targetY, done){
+  targetY = Math.max(0, Math.min(targetY,
+    document.documentElement.scrollHeight - window.innerHeight));
+
+  if (REDUCED){
+    window.scrollTo({ top: targetY, behavior: "instant" });
+    if (done) done();
     return;
   }
 
-  var adults = Number(document.getElementById("adults").value || 0);
-  var kids = Number(document.getElementById("kids").value || 0);
-  var adultNames = (document.getElementById("adult-names").value || "").trim();
-  var kidNames = (document.getElementById("kid-names").value || "").trim();
+  var startY = window.scrollY, dist = targetY - startY;
+  if (Math.abs(dist) < 2){ if (done) done(); return; }
 
-  if (chosen.value === "sim") {
-    if (adults < 1 && kids < 1) {
-      err.textContent = "Informe pelo menos um adulto ou uma criança para concluir a confirmação.";
-      return;
-    }
-    if (adultNames === "" && adults > 0) {
-      err.textContent = "Preencha o nome dos adultos antes de enviar.";
-      return;
-    }
-    if (kidNames === "" && kids > 0) {
-      err.textContent = "Preencha o nome e a idade das crianças antes de enviar.";
-      return;
-    }
+  var dur = clamp(Math.abs(dist) * 0.38, 450, 1150);
+  var t0  = performance.now();
+  var settled = false;
+
+  function land(){
+    if (settled) return;
+    settled = true;
+    if (done) done();
   }
 
-  var msg = "Oi!";
-  if (chosen.value === "sim") {
-    msg = "Vou estar lá!\nAdultos: " + adults + (adultNames ? "\nNomes: " + adultNames : "") + "\nCrianças: " + kids + (kidNames ? "\nCrianças: " + kidNames : "");
-  } else {
-    msg = "Não vou conseguir comparecer, mas agradeço muito pela atenção!";
-  }
+  /* If rAF never runs — a hidden or throttled tab, a browser that pauses
+     animations — the visitor still lands on the form. */
+  var guard = window.setTimeout(function(){
+    if (settled) return;
+    window.scrollTo({ top: targetY, behavior: "instant" });
+    land();
+  }, dur + 400);
 
-  var wa = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
-  window.open(wa, "_blank");
-  err.textContent = "";
-  status.textContent = chosen.value === "sim" ? "Mensagem pronta no WhatsApp" : "Mensagem pronta no WhatsApp";
+  (function step(now){
+    var t = clamp((now - t0) / dur, 0, 1);
+    var e = 1 - Math.pow(1 - t, 3);                 /* ease-out cubic */
+    window.scrollTo({ top: startY + dist * e, behavior: "instant" });
+    if (t < 1){ requestAnimationFrame(step); return; }
+    window.clearTimeout(guard);
+    land();
+  })(t0);
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('a[href^="#"]'), function(a){
+  a.addEventListener("click", function(e){
+    var target = document.getElementById(a.getAttribute("href").slice(1));
+    if (!target) return;
+    e.preventDefault();
+    glideTo(target.getBoundingClientRect().top + window.scrollY, function(){
+      /* arriving at the form should put the keyboard on the first choice */
+      var first = target.querySelector("input, button, [href], [tabindex]");
+      if (first) first.focus({ preventScroll: true });
+    });
+  });
 });
 
-if (document.querySelector('input[name="rsvp"]:checked')) {
-  toggleFields();
+/* ---------------- RSVP ---------------- */
+var form    = document.getElementById("rsvp");
+var yes     = document.getElementById("yes");
+var no      = document.getElementById("no");
+var fields  = document.getElementById("fields");
+var adults  = document.getElementById("adults");
+var kids    = document.getElementById("kids");
+var aNames  = document.getElementById("adult-names");
+var kNames  = document.getElementById("kid-names");
+var err     = document.getElementById("err");
+var status  = document.getElementById("status");
+var slots   = document.getElementById("slots");
+var totalEl = document.getElementById("total");
+
+function n(el){ var v = parseInt(el.value, 10); return isNaN(v) ? 0 : clamp(v, 0, 30); }
+function clearErr(){ err.textContent = ""; }
+function esc(s){ return s.replace(/[&<>"]/g, function(c){
+  return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+}); }
+function names(str){
+  return str.split(/[,;\n]|\se\s/i).map(function(s){ return s.trim(); }).filter(Boolean);
+}
+
+function toggleFields(){
+  fields.hidden = !yes.checked;
+  clearErr();
+  renderSlots();
+}
+
+/* the signature interaction: the grid fills as you type */
+function renderSlots(){
+  var rows = ['<li class="slot slot--lead"><span class="p">P1</span><span class="no">10</span><span class="who">Arthur</span></li>'];
+  var count = 1;
+
+  if (yes.checked){
+    var list  = names(aNames.value).concat(names(kNames.value));
+    var seats = n(adults) + n(kids);
+    var shownSeats = Math.max(seats, list.length);
+    count = 1 + seats;
+
+    if (shownSeats === 0){
+      rows.push('<li class="slot slot--empty"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">aguardando você</span></li>');
+    }
+    for (var i = 0; i < Math.min(shownSeats, 12); i++){
+      var pos = "P" + (i + 2);
+      if (list[i]){
+        rows.push('<li class="slot slot--filled"><span class="p">' + pos +
+                  '</span><span class="no">' + (i + 11) + '</span><span class="who">' +
+                  esc(list[i]) + '</span></li>');
+      } else {
+        rows.push('<li class="slot slot--empty"><span class="p">' + pos +
+                  '</span><span class="no">&mdash;</span><span class="who">vaga aberta</span></li>');
+      }
+    }
+    if (shownSeats > 12){
+      rows.push('<li class="slot slot--empty"><span class="p">&hellip;</span><span class="no">&mdash;</span><span class="who">mais ' +
+                (shownSeats - 12) + ' no grid</span></li>');
+    }
+  } else if (no.checked){
+    rows.push('<li class="slot slot--out"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">não poderá vir</span></li>');
+  } else {
+    rows.push('<li class="slot slot--empty"><span class="p">P2</span><span class="no">&mdash;</span><span class="who">aguardando você</span></li>');
+  }
+
+  slots.innerHTML = rows.join("");
+  totalEl.textContent = count;
+}
+
+Array.prototype.forEach.call(document.querySelectorAll(".step"), function(btn){
+  btn.addEventListener("click", function(){
+    var el = document.getElementById(btn.dataset.for);
+    el.value = clamp(n(el) + (+btn.dataset.step), 0, 30);
+    clearErr(); renderSlots();
+  });
+});
+
+[yes, no].forEach(function(r){ r.addEventListener("change", toggleFields); });
+[adults, kids, aNames, kNames].forEach(function(el){
+  el.addEventListener("input", function(){ clearErr(); renderSlots(); });
+});
+
+function fail(msg, el){
+  err.textContent = msg;
+  if (el) el.focus();
+  return false;
+}
+
+form.addEventListener("submit", function(e){
+  e.preventDefault();
+  clearErr();
+
+  if (!yes.checked && !no.checked){
+    return fail("Escolha uma das duas opções acima para continuar.", yes);
+  }
+
+  var msg;
+
+  if (no.checked){
+    msg = "Oi! Respondendo o Save the Date do Arthur.\n\n" +
+          "Infelizmente não vamos conseguir ir no dia 29/12. " +
+          "Manda um abraço pro aniversariante!";
+  } else {
+    var a = n(adults), k = n(kids);
+    if (a + k === 0)                  return fail("Informe pelo menos uma pessoa — adulto ou criança.", adults);
+    if (a > 0 && !aNames.value.trim()) return fail("Falta o nome dos adultos que vão.", aNames);
+    if (k > 0 && !kNames.value.trim()) return fail("Falta o nome e a idade das crianças que vão.", kNames);
+
+    msg = "Oi! Respondendo o Save the Date do Arthur.\n\n" +
+          "Vamos estar lá no dia 29/12.\n\n" +
+          "Adultos: " + a + (a ? "\n" + aNames.value.trim() : "") + "\n\n" +
+          "Crianças: " + k + (k ? "\n" + kNames.value.trim() : "") + "\n\n" +
+          "Total: " + (a + k) + " pessoa" + (a + k > 1 ? "s" : "") + ".";
+  }
+
+  status.textContent = "Abrindo o WhatsApp com sua mensagem pronta.";
+  window.open("https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg),
+              "_blank", "noopener,noreferrer");
+});
+
+/* ---------------- reveal ---------------- */
+if ("IntersectionObserver" in window && !REDUCED){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+  Array.prototype.forEach.call(document.querySelectorAll(".rise"), function(el, i){
+    el.style.transitionDelay = ((i % 4) * 70) + "ms";
+    io.observe(el);
+  });
+  /* last resort: never leave the page blank because the observer stayed quiet */
+  window.setTimeout(function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".rise:not(.in)"), function(el){
+      el.classList.add("in");
+    });
+  }, 2500);
+} else {
+  Array.prototype.forEach.call(document.querySelectorAll(".rise"), function(el){
+    el.classList.add("in");
+  });
+}
+
+/* ---------------- boot ---------------- */
+renderSlots();
+tickClock();
+setInterval(tickClock, 1000);
+
+onResize();
+window.addEventListener("resize", onResize, { passive: true });
+window.addEventListener("orientationchange", onResize);
+
+if (!REDUCED){
+  window.addEventListener("scroll", onScroll, { passive: true });
+  progress = shown = heroProgress();
+  watchHero();
+  startLoop();
 }
 })();
 </script>
